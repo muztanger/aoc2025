@@ -12,7 +12,7 @@ TODO: add stars :star:
 
 | Day | Finished      | Aggregated execution time | Comment |
 |-----|---------------|----------------------|--------|
-| 1   |  | ||
+| 1   | :star: :star: | ||
 | 2   |  | ||
 | 3   |  | ||
 | 4   |  | ||

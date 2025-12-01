@@ -82,14 +82,14 @@ public class Day01
             L82
             """;
         var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("3", result);
     }
     
     [TestMethod]
     public void Day01_Part1()
     {
         var result = Part1(Common.DayInput(nameof(Day01), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("995", result);
     }
     
     [TestMethod]
