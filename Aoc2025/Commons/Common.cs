@@ -9,7 +9,7 @@ public static class Common
         var profiler = new Profiler();
         profiler.Start();
 
-        var baseDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", year == "2024" ? "" : year);
+        var baseDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", year == "2025" ? "" : year);
         var fileName = Path.Combine(baseDir, "Input", $"{day}.input");
 
         if (!File.Exists(fileName))
