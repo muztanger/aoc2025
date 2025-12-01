@@ -3,10 +3,22 @@ namespace Advent_of_Code_2025;
 [TestClass]
 public class Day01
 {
+    private const string example1 = """
+            L68
+            L30
+            R48
+            L5
+            R60
+            L55
+            L1
+            L99
+            R14
+            L82
+            """;
+
     private static string Part1(IEnumerable<string> input)
     {
         var dial = 50;
-        Console.WriteLine(dial);
         var result = 0;
         foreach (var line in input)
         {
@@ -19,7 +31,6 @@ public class Day01
                 dial += int.Parse(line[1..]);
             }
             dial = (dial + 100) % 100;
-            Console.WriteLine(dial);
             if (dial == 0)
             {
                 result++;
@@ -36,7 +47,6 @@ public class Day01
         {
             var start = dial;
             var steps = 0;
-            var count = 0;
             if (line.StartsWith("L"))
             {
                 steps = -int.Parse(line[1..]);
@@ -57,11 +67,8 @@ public class Day01
                 if (dial == 0)
                 {
                     result++;
-                    count++;
                 }
             }
-
-            Console.WriteLine($"{line}: {start} -> {dial}: {count} {result}");
         }
         return result.ToString();
     }
@@ -69,19 +76,7 @@ public class Day01
     [TestMethod]
     public void Day01_Part1_Example01()
     {
-        var input = """
-            L68
-            L30
-            R48
-            L5
-            R60
-            L55
-            L1
-            L99
-            R14
-            L82
-            """;
-        var result = Part1(Common.GetLines(input));
+        var result = Part1(Common.GetLines(example1));
         Assert.AreEqual("3", result);
     }
     
@@ -95,19 +90,7 @@ public class Day01
     [TestMethod]
     public void Day01_Part2_Example01()
     {
-        var input = """
-            L68
-            L30
-            R48
-            L5
-            R60
-            L55
-            L1
-            L99
-            R14
-            L82
-            """;
-        var result = Part2(Common.GetLines(input));
+        var result = Part2(Common.GetLines(example1));
         Assert.AreEqual("6", result);
     }
     
