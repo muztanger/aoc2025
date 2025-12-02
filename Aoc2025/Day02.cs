@@ -92,11 +92,6 @@ public class Day02
 
         var idStr = id.ToString();
 
-        if (idStr.All(idStr[0].Equals))
-        {
-            return true;
-        }
-
         for (var length = idStr.Length / 2; length > 0; length--)
         {
             if (idStr.Length % length != 0)
