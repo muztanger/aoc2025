@@ -97,7 +97,10 @@ public class Day07
                     foreach (var aboveName in aboves)
                     {
                         var above = programs.Find(s => s.Name.Equals(aboveName));
-                        program.Disc.Add(above);
+                        if (above != null)
+                        {
+                            program?.Disc.Add(above);
+                        }
                     }
                 }
             }
@@ -116,7 +119,7 @@ public class Day07
 
     private static string Part1(IEnumerable<string> input)
     {
-        return Program.Bottom(input).Name;
+        return Program.Bottom(input)?.Name ?? "";
     }
     
     private static string Part2(IEnumerable<string> input)
