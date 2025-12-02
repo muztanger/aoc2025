@@ -105,18 +105,16 @@ public class Day02
             }
 
             var isMatch = true;
-            for (var i = 0; i < length; i++)
+            for (var i = 0; i < length && isMatch; i++)
             {
                 char check = idStr[i];
-                var k = i + length;
-                while (k < idStr.Length)
+                for (var k = i + length; k < idStr.Length; k += length)
                 {
                     if (idStr[k] != check)
                     {
                         isMatch = false;
                         break;
                     }
-                    k += length;
                 }
             }
 
