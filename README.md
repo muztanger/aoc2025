@@ -10,10 +10,10 @@ Ideas on what to try out:
 
 TODO: add stars :star:
 
-| Day | Finished      | Aggregated execution time | Comment |
+| Day | Finished      | Execution time | Comment |
 |-----|---------------|----------------------|--------|
-| 1   | :star: :star: | ||
-| 2   |  | ||
+| 1   | :star: :star: | 74 ms ||
+| 2   | :star: :star: | 275 ms ||
 | 3   |  | ||
 | 4   |  | ||
 | 5   |  | ||
