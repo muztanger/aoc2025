@@ -52,14 +52,20 @@ public class Day03
                     {
                         var newIndexes = (int[])indexes.Clone();
                         newIndexes[i]++;
-                        if (!visited.Contains(newIndexes) && newIndexes[newIndexes.Length - 1] < bank.Count)
+
+                        if (!visited.Contains(newIndexes) && newIndexes[i] < bank.Count)
                         {
-                            visited.Add(newIndexes);
-                            stack.Push(newIndexes);
+                            var newValue = newIndexes.Aggregate(0L, (v, i) => v * 10 + bank[i]);
+                            if (newValue > max)
+                            {
+                                visited.Add(newIndexes);
+                                stack.Push(newIndexes);
+                            }
                         }
                     }
                 }
             }
+            Console.WriteLine(max);
             result += max;
         }
         return result.ToString();
