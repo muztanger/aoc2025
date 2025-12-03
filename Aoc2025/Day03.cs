@@ -32,35 +32,37 @@ public class Day03
             
             var max = long.MinValue;
 
-            int[] first = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+            long BankValue(int[] bankIndexes) => bankIndexes.Aggregate(0L, (v, i) => v * 10 + bank[i]);
+
+            int[] first = Enumerable.Range(bank.Count - 12, 12).ToArray();
             
-            var stack = new Stack<int[]>();
-            stack.Push(first);
+            var queue = new PriorityQueue<int[], long>();
+            queue.Enqueue(first, -BankValue(first));
 
-            var visited = new HashSet<int[]>();
-            visited.Add(first);
-
-            while (stack.Count > 0)
+            var visited = new HashSet<string>
             {
-                var indexes = stack.Pop();
-                var value = indexes.Aggregate(0L, (v, i) => v * 10 + bank[i]);
+                string.Join(",", first)
+            };
+
+            while (queue.Count > 0)
+            {
+                var indexes = queue.Dequeue();
+                var value = BankValue(indexes);
                 max = Math.Max(max, value);
 
-                for (int i = indexes.Length - 1; i >= 0; i--)
+                for (var i = 0; i < indexes.Length; i++)
                 {
-                    if (indexes[i] < bank.Count - 1 && !indexes.Contains(indexes[i] + 1))
+                    if (indexes[i] > 0 && !indexes.Contains(indexes[i] - 1))
                     {
                         var newIndexes = (int[])indexes.Clone();
-                        newIndexes[i]++;
+                        newIndexes[i]--;
 
-                        if (!visited.Contains(newIndexes) && newIndexes[i] < bank.Count)
+                        var newValue = BankValue(newIndexes);
+                        var newKey = string.Join(",", newIndexes);
+                        if (!visited.Contains(newKey)) // Need something like Dijkstra's algorithm to avoid revisiting
                         {
-                            var newValue = newIndexes.Aggregate(0L, (v, i) => v * 10 + bank[i]);
-                            if (newValue > max)
-                            {
-                                visited.Add(newIndexes);
-                                stack.Push(newIndexes);
-                            }
+                            visited.Add(newKey);
+                            queue.Enqueue(newIndexes, -newValue);
                         }
                     }
                 }
@@ -111,7 +113,7 @@ public class Day03
             818181911112111
             """;
         var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("3121910778619", result);
     }
     
     [TestMethod]
