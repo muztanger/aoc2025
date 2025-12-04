@@ -32,38 +32,67 @@ public class Day03
             
             var max = long.MinValue;
 
-            long BankValue(int[] bankIndexes) => bankIndexes.Aggregate(0L, (v, i) => v * 10 + bank[i]);
+            long BankValue(List<int> bankIndexes) => bankIndexes.Aggregate(0L, (v, i) => v * 10 + bank[i]);
 
-            int[] first = Enumerable.Range(bank.Count - 12, 12).ToArray();
+            List<int> first = [0];
             
-            var queue = new PriorityQueue<int[], long>();
-            queue.Enqueue(first, -BankValue(first));
-
-            var visited = new HashSet<string>
+            var stack = new Stack<List<int>>();
+            
             {
-                string.Join(",", first)
-            };
-
-            while (queue.Count > 0)
-            {
-                var indexes = queue.Dequeue();
-                var value = BankValue(indexes);
-                max = Math.Max(max, value);
-
-                for (var i = 0; i < indexes.Length; i++)
+                var maxIndexes = new List<int>();
+                var maxValue = bank[0];
+                for (int i = 0; i < bank.Count - 12 + 1; i++)
                 {
-                    if (indexes[i] > 0 && !indexes.Contains(indexes[i] - 1))
+                    if (bank[i] > maxValue)
                     {
-                        var newIndexes = (int[])indexes.Clone();
-                        newIndexes[i]--;
+                        maxIndexes.Clear();
+                        maxIndexes.Add(i);
+                        maxValue = bank[i];
+                    }
+                    else if (bank[i] == maxValue)
+                    {
+                        maxIndexes.Add(i);
+                    }
+                }
+                foreach (var index in maxIndexes)
+                {
+                    stack.Push([index]);
+                }
+            }
 
-                        var newValue = BankValue(newIndexes);
-                        var newKey = string.Join(",", newIndexes);
-                        if (!visited.Contains(newKey)) // Need something like Dijkstra's algorithm to avoid revisiting
+            while (stack.Count > 0)
+            {
+                var indexes = stack.Pop();
+                if (indexes.Count == 12)
+                {
+                    var value = BankValue(indexes);
+                    max = Math.Max(max, value);
+                    continue;
+                }
+
+                var last = indexes.Last();
+                var firstIndex = last + 1;
+                if (firstIndex < bank.Count && indexes.Count < 12)
+                {
+                    var maxValue = bank[firstIndex];
+                    var maxIndexes = new List<int>();
+                    for (int i = firstIndex; i < bank.Count - 12 + indexes.Count + 1; i++)
+                    {
+                        if (bank[i] > maxValue)
                         {
-                            visited.Add(newKey);
-                            queue.Enqueue(newIndexes, -newValue);
+                            maxIndexes.Clear();
+                            maxIndexes.Add(i);
+                            maxValue = bank[i];
                         }
+                        else if (bank[i] == maxValue)
+                        {
+                            maxIndexes.Add(i);
+                        }
+                    }
+                    foreach (var index in maxIndexes)
+                    {
+                        var newIndexes = new List<int>(indexes) { index };
+                        stack.Push(newIndexes);
                     }
                 }
             }
@@ -83,24 +112,14 @@ public class Day03
             818181911112111
             """;
         var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day03_Part1_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("357", result);
     }
     
     [TestMethod]
     public void Day03_Part1()
     {
         var result = Part1(Common.DayInput(nameof(Day03), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("17113", result);
     }
     
     [TestMethod]
@@ -116,21 +135,12 @@ public class Day03
         Assert.AreEqual("3121910778619", result);
     }
     
-    [TestMethod]
-    public void Day03_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
+  
     [TestMethod]
     public void Day03_Part2()
     {
         var result = Part2(Common.DayInput(nameof(Day03), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("169709990062889", result);
     }
     
 }
