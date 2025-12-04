@@ -13,18 +13,6 @@ public class Box<T> : IEquatable<Box<T>>
     public T Area => Width * Height;
     public Pos<T> Size => new(Width, Height);
 
-    [Obsolete("Use the constructor with IEnumerable<Pos<T>> instead")]
-    public Box(params Pos<T>[] positions)
-    {
-        Assert.IsNotEmpty(positions);
-        Min = new Pos<T>(positions[0]);
-        Max = new Pos<T>(positions[0]);
-        foreach (var p in positions)
-        {
-            IncreaseToPoint(p);
-        }
-    }
-
     [OverloadResolutionPriority(1)]
     public Box(params IEnumerable<Pos<T>> positions)
     {
