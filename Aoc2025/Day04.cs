@@ -10,7 +10,6 @@ public class Day04
         var height = input.Count();
         var box = new Box<int>(width, height);
 
-        var accessible = new HashSet<Pos<int>>();
         var grid = new List<List<char>>();
         foreach (var line in input)
         {
@@ -60,10 +59,10 @@ public class Day04
         }
 
         var removed = new HashSet<Pos<int>>();
-        var removedCount = -1;
-        while (removedCount != removed.Count)
+        var lastRemoveCount = -1;
+        while (lastRemoveCount != removed.Count)
         {
-            removedCount = removed.Count;
+            lastRemoveCount = removed.Count;
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
