@@ -48,11 +48,49 @@ public class Day04
     
     private static string Part2(IEnumerable<string> input)
     {
-        var result = new StringBuilder();
+        var width = input.First().Length;
+        var height = input.Count();
+        var box = new Box<int>(width, height);
+
+
+        var grid = new List<List<char>>();
         foreach (var line in input)
         {
+            grid.Add(line.ToList());
         }
-        return result.ToString();
+
+        var removed = new HashSet<Pos<int>>();
+        var removedCount = -1;
+        while (removedCount != removed.Count)
+        {
+            removedCount = removed.Count;
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    var pos = new Pos<int>(x, y);
+                    if (removed.Contains(pos) || grid[y][x] != '@')
+                    {
+                        continue;
+                    }
+                    var count = 0;
+                    foreach (var dir in Pos<int>.CompassDirections)
+                    {
+                        var other = pos + dir;
+                        if (box.Contains(other) && grid[other.y][other.x] == '@' && !removed.Contains(other))
+                        {
+                            count++;
+                        }
+                    }
+                    if (count < 4)
+                    {
+                        removed.Add(pos);
+                    }
+                }
+            }
+        }
+
+        return removed.Count.ToString();
     }
 
     private string example = """
@@ -86,14 +124,14 @@ public class Day04
     public void Day04_Part2_Example01()
     {
         var result = Part2(Common.GetLines(example));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("43", result);
     }
     
     [TestMethod]
     public void Day04_Part2()
     {
         var result = Part2(Common.DayInput(nameof(Day04), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("9182", result);
     }
     
 }
