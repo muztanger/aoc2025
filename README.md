@@ -8,8 +8,6 @@ Ideas on what to try out:
 
 ## Progress
 
-TODO: add stars :star:
-
 | Day | Finished      | Execution time | Comment |
 |-----|---------------|----------------------|--------|
 | 1   | :star: :star: | 74 ms ||
