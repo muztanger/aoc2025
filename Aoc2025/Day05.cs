@@ -79,24 +79,23 @@ public class Day05
         return result.ToString();
     }
     
-    private string example = """
-            3-5
-            10-14
-            16-20
-            12-18
-
-            1
-            5
-            8
-            11
-            17
-            32
-            """;
-
     [TestMethod]
     public void Day05_Part1_Example01()
     {
-        var result = Part1(Common.GetLines(example));
+        var input = """
+                3-5
+                10-14
+                16-20
+                12-18
+
+                1
+                5
+                8
+                11
+                17
+                32
+                """;
+        var result = Part1(Common.GetLines(input));
         Assert.AreEqual("3", result);
     }
     
