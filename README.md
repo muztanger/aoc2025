@@ -16,7 +16,7 @@ TODO: add stars :star:
 | 2   | :star: :star: | 275 ms ||
 | 3   | :star: :star: | 383 ms ||
 | 4   | :star: :star: | 228 ms||
-| 5   |  | ||
+| 5   | :star: :star: | 92 ms ||
 | 6   |  | ||
 | 7   |  | ||
 | 8   |  | ||
