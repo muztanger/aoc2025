@@ -101,17 +101,18 @@ public class Day03
         }
         return result.ToString();
     }
-    
-    [TestMethod]
-    public void Day03_Part1_Example01()
-    {
-        var input = """
+
+    private string example = """
             987654321111111
             811111111111119
             234234234234278
             818181911112111
             """;
-        var result = Part1(Common.GetLines(input));
+
+    [TestMethod]
+    public void Day03_Part1_Example01()
+    {
+        var result = Part1(Common.GetLines(example));
         Assert.AreEqual("357", result);
     }
     
@@ -125,13 +126,7 @@ public class Day03
     [TestMethod]
     public void Day03_Part2_Example01()
     {
-        var input = """
-            987654321111111
-            811111111111119
-            234234234234278
-            818181911112111
-            """;
-        var result = Part2(Common.GetLines(input));
+        var result = Part2(Common.GetLines(example));
         Assert.AreEqual("3121910778619", result);
     }
     
