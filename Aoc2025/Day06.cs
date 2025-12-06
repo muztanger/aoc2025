@@ -127,38 +127,28 @@ public class Day06
     public void Day06_Part1_Example01()
     {
         var result = Part1(Common.GetLines(example));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("4277556", result);
     }
     
     [TestMethod]
     public void Day06_Part1()
     {
         var result = Part1(Common.DayInput(nameof(Day06), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("5667835681547", result);
     }
     
     [TestMethod]
     public void Day06_Part2_Example01()
     {
         var result = Part2(Common.GetLines(example));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day06_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("3263827", result);
     }
     
     [TestMethod]
     public void Day06_Part2()
     {
         var result = Part2(Common.DayInput(nameof(Day06), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("9434900032651", result);
     }
     
 }
