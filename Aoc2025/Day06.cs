@@ -58,8 +58,8 @@ public class Day06
     {
         var lines = input.ToList();
         var columns = new List<string>();
-        int nx = lines[0].Count();
-        var ny = lines.Count();
+        int nx = lines[0].Length;
+        var ny = lines.Count;
         for (var x = 0; x < nx;  x++)
         {
             var colStr = new StringBuilder();
