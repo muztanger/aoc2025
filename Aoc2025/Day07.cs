@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Advent_of_Code_2025;
 
@@ -13,6 +15,11 @@ public class Day07
         {
             return (new Tachyon { Pos = new(Pos.x - 1, Pos.y + 1) },
                 new Tachyon { Pos = new(Pos.x + 1, Pos.y + 1) });
+        }
+
+        public override string ToString()
+        {
+            return Pos.ToString();
         }
 
         // override object.Equals
@@ -79,10 +86,52 @@ public class Day07
     
     private static string Part2(IEnumerable<string> input)
     {
-        var result = new StringBuilder();
-        foreach (var line in input)
+        var result = 0L;
+        var box = new Box<int>(input.First().Length - 1, input.Count() - 1);
+        var manifold = input.ToList();
+
+        var stack = new Stack<(Tachyon tachyon, List<Tachyon> path, long count)>();
+        stack.Push((new Tachyon() { Pos = new(manifold.First().IndexOf('S'), 0) }, [], 0));
+
+        var mem = new Dictionary<string, long>();
+        while (stack.Count > 0)
         {
+            var (tachyon, path, count) = stack.Pop();
+            var key = String.Concat(path);
+            if (mem.TryGetValue(key, out var cached))
+            {
+                result += cached;
+                continue;
+            }
+            else
+            {
+                mem[key] = count;
+            }
+
+            var below = tachyon.Pos + Pos<int>.South;
+            if (box.Contains(below))
+            {
+                var newPath = new List<Tachyon>(path)
+                {
+                    tachyon
+                };
+                if (manifold[below.y][below.x] == '^')
+                {
+                    var split = tachyon.Split();
+                    stack.Push((split.t2, newPath, count + 1));
+                    stack.Push((split.t1, newPath, count + 1));
+                }
+                else
+                {
+                    stack.Push((new Tachyon() { Pos = below }, newPath, count));
+                }
+            }
+            else
+            {
+               result += count; // Correct?
+            }
         }
+
         return result.ToString();
     }
     
