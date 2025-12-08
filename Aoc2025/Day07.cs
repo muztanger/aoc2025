@@ -52,7 +52,7 @@ public class Day07
     private static string Part1(IEnumerable<string> input)
     {
         var result = 0;
-        var box = new Box<int>(input.First().Length, input.Count());
+        var box = new Box<int>(input.First().Length - 1, input.Count() - 1);
         var manifold = input.ToList();
         var start = new Tachyon() { Pos = new (manifold.First().IndexOf('S'), 0) };
         var tachyons = new HashSet<Tachyon>() { start };
@@ -68,8 +68,8 @@ public class Day07
                     if (manifold[below.y][below.x] == '^')
                     {
                         var split = tachyon.Split();
-                        if (!next.Contains(split.t1)) next.Add(split.t1);
-                        if (!next.Contains(split.t2)) next.Add(split.t2);
+                        next.Add(split.t1);
+                        next.Add(split.t2);
                         
                         result++;
                     }
@@ -90,6 +90,9 @@ public class Day07
         var box = new Box<int>(input.First().Length - 1, input.Count() - 1);
         var manifold = input.ToList();
 
+        // Step 1: Create tree of the beams
+        // Step 2: Count the amount of beams from below up using memomization
+
         var stack = new Stack<(Tachyon tachyon, List<Tachyon> path, long count)>();
         stack.Push((new Tachyon() { Pos = new(manifold.First().IndexOf('S'), 0) }, [], 0));
 
@@ -97,7 +100,7 @@ public class Day07
         while (stack.Count > 0)
         {
             var (tachyon, path, count) = stack.Pop();
-            var key = String.Concat(path);
+            var key = string.Concat(path);
             if (mem.TryGetValue(key, out var cached))
             {
                 result += cached;
@@ -159,14 +162,14 @@ public class Day07
     public void Day07_Part1_Example01()
     {
         var result = Part1(Common.GetLines(example));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("21", result);
     }
     
     [TestMethod]
     public void Day07_Part1()
     {
         var result = Part1(Common.DayInput(nameof(Day07), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("1585", result);
     }
     
     [TestMethod]
