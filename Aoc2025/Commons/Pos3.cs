@@ -41,12 +41,12 @@ public class Pos3<T> : IEquatable<Pos3<T>> where T : INumber<T>
         return $"({x}, {y}, {z})";
     }
 
-    internal T Manhattan(Pos3<T> inter)
+    public T Manhattan(Pos3<T> inter)
     {
         return T.Abs(x - inter.x) + T.Abs(y - inter.y) + T.Abs(z - inter.z);
     }
 
-    internal TResult Dist<TResult>(Pos3<T> p1)
+    public TResult Dist<TResult>(Pos3<T> p1)
         where TResult : IFloatingPoint<TResult>, IRootFunctions<TResult>
     {
         Pos3<T> delta = p1 - this;

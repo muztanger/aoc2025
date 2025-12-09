@@ -1,3 +1,4 @@
+using Advent_of_Code_2025.Commons;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using static System.Net.Mime.MediaTypeNames;
@@ -23,15 +24,8 @@ public class Day07
         }
 
         // override object.Equals
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            //       
-            // See the full list of guidelines at
-            //   http://go.microsoft.com/fwlink/?LinkID=85237  
-            // and also the guidance for operator== at
-            //   http://go.microsoft.com/fwlink/?LinkId=85238
-            //
-
             if (obj == null || GetType() != obj.GetType())
             {
                 return false;
@@ -83,59 +77,111 @@ public class Day07
         }
         return result.ToString();
     }
-    
+
+    class Node
+    {
+        public Pos<int> Pos { get; init;}
+        public Node? SouthWest { get; set; } = null;
+        public Node? SouthEast { get; set; } = null;
+        public Node? South { get; set; } = null;
+
+        public Node(Pos<int> pos)
+        {
+            Pos = pos;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            var other = (Node)obj;
+
+            return Pos.Equals(other.Pos);
+        }
+
+        public override int GetHashCode()
+        {
+            return Pos.GetHashCode();
+        }
+
+        public long Count()
+        {
+            if (South is not null)
+            {
+                return South.Count();
+            }
+            else if (SouthWest is not null || SouthEast is not null)
+            {
+                return SouthWest?.Count() ?? 0 + SouthEast?.Count() ?? 0;
+            }
+            return 1;
+        }
+    }
+
     private static string Part2(IEnumerable<string> input)
     {
         var result = 0L;
         var box = new Box<int>(input.First().Length - 1, input.Count() - 1);
         var manifold = input.ToList();
 
-        // Step 1: Create tree of the beams
-        // Step 2: Count the amount of beams from below up using memomization
+        var start = new Node(new(manifold.First().IndexOf('S'), 0));
 
-        var stack = new Stack<(Tachyon tachyon, List<Tachyon> path, long count)>();
-        stack.Push((new Tachyon() { Pos = new(manifold.First().IndexOf('S'), 0) }, [], 0));
-
-        var mem = new Dictionary<string, long>();
+        var stack = new Stack<Node>();
+        stack.Push(start);
+        var nodeSet = new HashSet<Node>();
         while (stack.Count > 0)
         {
-            var (tachyon, path, count) = stack.Pop();
-            var key = string.Concat(path);
-            if (mem.TryGetValue(key, out var cached))
-            {
-                result += cached;
-                continue;
-            }
-            else
-            {
-                mem[key] = count;
-            }
-
-            var below = tachyon.Pos + Pos<int>.South;
+            var node = stack.Pop();
+            var below = node.Pos + Pos<int>.South;
             if (box.Contains(below))
             {
-                var newPath = new List<Tachyon>(path)
-                {
-                    tachyon
-                };
                 if (manifold[below.y][below.x] == '^')
                 {
-                    var split = tachyon.Split();
-                    stack.Push((split.t2, newPath, count + 1));
-                    stack.Push((split.t1, newPath, count + 1));
+                    var se = new Node(below + Pos<int>.East);
+                    if (nodeSet.TryGetValue(se, out var southEast))
+                    {
+                        node.SouthEast = southEast;
+                    }
+                    else
+                    {
+                        node.SouthEast = se;
+                        nodeSet.Add(se);
+                        stack.Push(se);
+                    }
+
+                    var sw = new Node(below + Pos<int>.West);
+                    if (nodeSet.TryGetValue(sw, out var southWest))
+                    {
+                        node.SouthWest = southWest;
+                    }
+                    else
+                    {
+                        node.SouthWest = sw;
+                        nodeSet.Add(sw);
+                        stack.Push(sw);
+                    }
                 }
                 else
                 {
-                    stack.Push((new Tachyon() { Pos = below }, newPath, count));
+                    var s = new Node(below);
+                    if (nodeSet.TryGetValue(s, out var south))
+                    {
+                        node.South = south;
+                    }
+                    else
+                    {
+                        node.South = s;
+                        nodeSet.Add(s);
+                        stack.Push(s);
+                    }
                 }
-            }
-            else
-            {
-               result += count; // Correct?
             }
         }
 
-        return result.ToString();
+        return start.Count().ToString();
     }
     
     private string example = """
