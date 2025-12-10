@@ -1,7 +1,11 @@
-﻿namespace Advent_of_Code_2025.Commons;
+﻿using System.Security.Cryptography.X509Certificates;
+
+namespace Advent_of_Code_2025.Commons;
 
 public class Line<T> where T : INumber<T>
 {
+    public Pos<T> P1 => mP1;
+    public Pos<T> P2 => mP2;
     private readonly Pos<T> mP1;
     private readonly Pos<T> mP2;
     private bool mIsVertical;

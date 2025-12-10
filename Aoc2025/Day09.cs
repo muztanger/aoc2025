@@ -15,7 +15,7 @@ public class Day09
             positions.Add(new Pos<long>(x, y));
         }
 
-        for (int i = 0; i < positions.Count -1; i++)
+        for (int i = 0; i < positions.Count - 1; i++)
         {
             for (int j = i + 1; j < positions.Count; j++)
             {
@@ -29,27 +29,64 @@ public class Day09
     
     private static string Part2(IEnumerable<string> input)
     {
-        var result = new StringBuilder();
+        var result = 0L;
+        var lines = new List<Line<long>>();
+        var positions = new List<Pos<long>>();
+        var lastPos = new Pos<long>(0, 0);
         foreach (var line in input)
         {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+            var (x, y) = line.Split(',').Select(long.Parse).ToArray();
+            positions.Add(new Pos<long>(x, y));
+            lines.Add(new Line<long>(lastPos, new Pos<long>(x, y)));
         }
+        lines.First().P1.Set(lines.Last().P2);
+
+        for (int i = 0; i < positions.Count - 1; i++)
+        {
+            for (int j = i + 1; j < positions.Count; j++)
+            {
+                var box = new Box<long>(positions[i], positions[j]);
+                var ixMin = box.Width > 1 ? box.Min.x + 1 : box.Min.x;
+                var ixMax = box.Width > 1 ? box.Max.x - 1 : box.Max.x;
+                var iyMin = box.Height > 1 ? box.Min.y + 1 : box.Min.y;
+                var iyMax = box.Height > 1 ? box.Min.y - 1 : box.Min.y;
+                var inside = new Box<long>(new Pos<long>(ixMin, iyMin), new Pos<long>(ixMax, iyMax));
+                //check that no line intersects inside
+
+                var intersects = false;
+                foreach (var line in lines)
+                {
+                    if (inside.Intersects(line))
+                    {
+                        intersects = true;
+                        break;
+                    }
+                }
+                if (intersects)
+                    continue;
+                result = Math.Max(result, box.Area);
+            }
+        }
+
         return result.ToString();
     }
     
+    string example = """
+        7,1
+        11,1
+        11,7
+        9,7
+        9,5
+        2,5
+        2,3
+        7,3
+        """;
     [TestMethod]
     public void Day09_Part1_Example01()
     {
-        var input = """
-            7,1
-            11,1
-            11,7
-            9,7
-            9,5
-            2,5
-            2,3
-            7,3
-            """;
-        var result = Part1(Common.GetLines(input));
+        var result = Part1(Common.GetLines(example));
         Assert.AreEqual("50", result);
     }
     
@@ -64,20 +101,7 @@ public class Day09
     [TestMethod]
     public void Day09_Part2_Example01()
     {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day09_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
+        var result = Part2(Common.GetLines(example));
         Assert.AreEqual("", result);
     }
     

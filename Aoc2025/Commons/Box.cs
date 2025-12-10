@@ -138,4 +138,13 @@ public class Box<T> : IEquatable<Box<T>>
         return Min.GetHashCode() * 3779 + Max.GetHashCode();
     }
 
+    public bool Intersects(Line<T> line)
+    {
+        var other = new Box<T>(line.P1, line.P2);
+        var intersection = Intersection(other);
+        if (intersection is null) { 
+            return false;
+        }
+        return intersection.Area > T.Zero;
+    }
 }
