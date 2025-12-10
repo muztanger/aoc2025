@@ -1,4 +1,6 @@
 
+
+
 namespace Advent_of_Code_2025;
 
 [TestClass]
@@ -68,6 +70,45 @@ public class Day10
                 {
                     State[index] = !State[index];
                 }
+            }
+        }
+
+        class Joltages
+        {
+            List<int> Values;
+            public Joltages(List<int> values)
+            {
+                Values = values;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                if (obj is not Joltages other)
+                {
+                    return false;
+                }
+                if (Values.Count != other.Values.Count)
+                {
+                    return false;
+                }
+                for (int i = 0; i < Values.Count; i++)
+                {
+                    if (Values[i] != other.Values[i])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            public override int GetHashCode()
+            {
+                int hash = 17;
+                foreach (var value in Values)
+                {
+                    hash = hash * 31 + value;
+                }
+                return hash;
             }
         }
 
@@ -144,6 +185,11 @@ public class Day10
             }
             return -1; // No solution found
         }
+
+        internal int PressesToJoltage()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private static string Part1(IEnumerable<string> input)
@@ -158,9 +204,12 @@ public class Day10
     
     private static string Part2(IEnumerable<string> input)
     {
-        var result = new StringBuilder();
+        var result = 0;
         foreach (var line in input)
         {
+            var presses = Machine.Parse(line).PressesToJoltage();
+            Console.WriteLine($"Presses: {presses}");
+            result += presses;
         }
         return result.ToString();
     }
