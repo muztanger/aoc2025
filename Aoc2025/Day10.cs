@@ -1,3 +1,4 @@
+
 namespace Advent_of_Code_2025;
 
 [TestClass]
@@ -5,16 +6,80 @@ public class Day10
 {
     class Machine
     {
+        class Lights
+        {
 
-        List<bool> _lights;
-        readonly List<bool> _diagram;
+            public List<bool> State;
+            public int Count => State.Count;
+            
+            public Lights(List<bool> state)
+            {
+                State = state;
+            }
+
+            public Lights(int count)
+            {
+                State = [.. new bool[count]];
+            }
+
+            public Lights(Lights other)
+            {
+                State = [.. other.State];
+            }
+
+            public override bool Equals(object? obj)
+            {
+                if (obj is not Lights other)
+                {
+                    return false;
+                }
+                if (State.Count != other.State.Count)
+                {
+                    return false;
+                }
+                for (int i = 0; i < State.Count; i++)
+                {
+                    if (State[i] != other.State[i])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            public override int GetHashCode()
+            {
+                int hash = 17;
+                foreach (var light in State)
+                {
+                    hash = hash * 31 + (light ? 1 : 0);
+                }
+                return hash;
+            }
+
+            public override string ToString()
+            {
+                return string.Concat(State.Select(b => b ? '#' : '.'));
+            }
+
+            internal void Toggle(List<int> wirings)
+            {
+                foreach (var index in wirings)
+                {
+                    State[index] = !State[index];
+                }
+            }
+        }
+
+        Lights _lights;
+        readonly Lights _diagram;
         List<List<int>> _wirings;
         List<int> _requirements;
 
         public Machine(List<bool> diagram, List<List<int>> wirings, List<int> requirements)
         {
-            _diagram = diagram;
-            _lights = [.. new bool[_diagram.Count]];
+            _diagram = new Lights(diagram);
+            _lights = new Lights(_diagram.Count);
             _wirings = wirings;
             _requirements = requirements;
         }
@@ -44,45 +109,36 @@ public class Day10
 
         public int FewestStepsToGoal()
         {
-            bool IsGoalState(List<bool> lights)
-            {
-                for (int i = 0; i < lights.Count; i++)
-                {
-                    int litCount = lights[i] ? 1 : 0;
-                    if (litCount != _requirements[i])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
             var initialState = (_lights, 0);
-            var visited = new Dictionary<List<bool>, int>();
-            var queue = new PriorityQueue<((List<bool> lights, int step) state, int steps), int>();
-            queue.Enqueue((initialState, 0), 0);
-            visited[initialState.Item1] = initialState.Item2;
+            var visited = new Dictionary<(Lights lights, int step), int>();
+            var queue = new Queue<((Lights lights, int step) state, int steps)>();
+            queue.Enqueue((initialState, 0));
+            visited[initialState] = 0;
             while (queue.Count > 0)
             {
                 var (currentState, steps) = queue.Dequeue();
                 var (currentLights, currentWiringIndex) = currentState;
-                if (IsGoalState(currentLights))
+                if (currentLights.Equals(_diagram))
                 {
-                    return steps;
+                    return steps - 1;
                 }
+                Assert.IsNotNull(currentLights);
                 // Toggle lights based on current wiring
-                var newLights = new List<bool>(currentLights);
-                foreach (var lightIndex in _wirings[currentWiringIndex])
-                {
-                    newLights[lightIndex] = !newLights[lightIndex];
-                }
+                var newLights = new Lights(currentLights);
+                newLights.Toggle(_wirings[currentWiringIndex]);
+
                 for (var nextWiringIndex = 0; nextWiringIndex < _wirings.Count; nextWiringIndex++)
                 {
                     var newState = (newLights, nextWiringIndex);
-                    if (!visited.TryGetValue(newLights, out var visitedCount) && visitedCount > steps + 1)
+                    if (!visited.TryGetValue(newState, out var visitedCount))
                     {
-                        visited[newLights] = steps + 1;
-                        queue.Enqueue((newState, steps + 1), steps + 1);
+                        visited[newState] = steps + 1;
+                        queue.Enqueue((newState, steps + 1));
+                    }
+                    else if (visitedCount > steps + 1)
+                    {
+                        visited[newState] = steps + 1;
+                        queue.Enqueue((newState, steps + 1));
                     }
                 }
             }
@@ -92,10 +148,10 @@ public class Day10
 
     private static string Part1(IEnumerable<string> input)
     {
-        var result = new StringBuilder();
+        var result = 0;
         foreach (var line in input)
         {
-            Console.WriteLine(Machine.Parse(line).FewestStepsToGoal());
+            result += Machine.Parse(line).FewestStepsToGoal();
         }
         return result.ToString();
     }
