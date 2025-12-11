@@ -1,6 +1,8 @@
 
 
 
+
+
 namespace Advent_of_Code_2025;
 
 [TestClass]
@@ -73,17 +75,27 @@ public class Day10
             }
         }
 
-        class Joltages
+        class JoltageLevels
         {
             List<int> Values;
-            public Joltages(List<int> values)
+            public JoltageLevels(List<int> values)
             {
                 Values = values;
             }
 
+            public JoltageLevels(int count)
+            {
+                Values = [.. new int[count]];
+            }
+
+            public JoltageLevels(JoltageLevels other)
+            {
+                Values = [.. other.Values];
+            }
+
             public override bool Equals(object? obj)
             {
-                if (obj is not Joltages other)
+                if (obj is not JoltageLevels other)
                 {
                     return false;
                 }
@@ -110,19 +122,46 @@ public class Day10
                 }
                 return hash;
             }
+
+            public override string ToString()
+            {
+                return string.Join(",", Values);
+            }
+
+            internal void Press(List<int> list)
+            {
+                foreach (var index in list)
+                {
+                    Values[index]++;
+                }
+            }
+
+            internal bool IsTooHighLevel(JoltageLevels requirements)
+            {
+                for (var i = 0; i < Values.Count; i++)
+                {
+                    if (Values[i] > requirements.Values[i])
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
         }
 
         Lights _lights;
         readonly Lights _diagram;
         List<List<int>> _wirings;
-        List<int> _requirements;
+        JoltageLevels _requirements;
+        JoltageLevels _levels;
 
         public Machine(List<bool> diagram, List<List<int>> wirings, List<int> requirements)
         {
             _diagram = new Lights(diagram);
             _lights = new Lights(_diagram.Count);
             _wirings = wirings;
-            _requirements = requirements;
+            _requirements = new JoltageLevels(requirements);
+            _levels = new JoltageLevels(requirements.Count);
         }
 
         public static Machine Parse(string input)
@@ -148,7 +187,7 @@ public class Day10
             return new Machine(lights, wirings, requirements);
         }
 
-        public int FewestStepsToGoal()
+        public int FewestStepsToLight()
         {
             var initialState = (_lights, 0);
             var visited = new Dictionary<(Lights lights, int step), int>();
@@ -186,9 +225,46 @@ public class Day10
             return -1; // No solution found
         }
 
-        internal int PressesToJoltage()
+        internal int FewestPressesToJoltage()
         {
-            throw new NotImplementedException();
+            var initialState = (_levels, 0);
+            var visited = new Dictionary<(JoltageLevels joltageLevels, int step), int>();
+            var queue = new Queue<((JoltageLevels joltageLevels, int step) state, int steps)>();
+            queue.Enqueue((initialState, 0));
+            visited[initialState] = 0;
+            while (queue.Count > 0)
+            {   
+                var (currentState, steps) = queue.Dequeue();
+                var (currentJoltageLevels, currentWiringIndex) = currentState;
+                if (currentJoltageLevels.Equals(_requirements))
+                {
+                    return steps;
+                }
+                Assert.IsNotNull(currentJoltageLevels);
+                
+                var newJoltageLevels = new JoltageLevels(currentJoltageLevels);
+                newJoltageLevels.Press(_wirings[currentWiringIndex]);
+                if (newJoltageLevels.IsTooHighLevel(_requirements))
+                {
+                    continue;
+                }
+
+                for (var nextWiringIndex = 0; nextWiringIndex < _wirings.Count; nextWiringIndex++)
+                {
+                    var newState = (newJoltageLevels, nextWiringIndex);
+                    if (!visited.TryGetValue(newState, out var visitedCount))
+                    {
+                        visited[newState] = steps + 1;
+                        queue.Enqueue((newState, steps + 1));
+                    }
+                    else if (visitedCount > steps + 1)
+                    {
+                        visited[newState] = steps + 1;
+                        queue.Enqueue((newState, steps + 1));
+                    }
+                }
+            }
+            return -1; // No solution found
         }
     }
 
@@ -197,7 +273,7 @@ public class Day10
         var result = 0;
         foreach (var line in input)
         {
-            result += Machine.Parse(line).FewestStepsToGoal();
+            result += Machine.Parse(line).FewestStepsToLight();
         }
         return result.ToString();
     }
@@ -207,60 +283,38 @@ public class Day10
         var result = 0;
         foreach (var line in input)
         {
-            var presses = Machine.Parse(line).PressesToJoltage();
+            var presses = Machine.Parse(line).FewestPressesToJoltage();
             Console.WriteLine($"Presses: {presses}");
             result += presses;
         }
         return result.ToString();
     }
     
+    string example = """
+        [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
+        [...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
+        [.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
+        """;
+
     [TestMethod]
     public void Day10_Part1_Example01()
     {
-        var input = """
-            [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
-            [...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
-            [.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}
-            """;
-        var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day10_Part1_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        var result = Part1(Common.GetLines(example));
+        Assert.AreEqual("7", result);
     }
     
     [TestMethod]
     public void Day10_Part1()
     {
         var result = Part1(Common.DayInput(nameof(Day10), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("477", result);
     }
     
     [TestMethod]
     public void Day10_Part2_Example01()
     {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day10_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        var result = Part2(Common.GetLines(example));
+        Assert.AreEqual("33", result);
     }
     
     [TestMethod]
