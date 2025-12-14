@@ -57,10 +57,19 @@ public class Day12
     {
         public static List<Present> Presents = [];
         public static List<int> PresentSizeOrder { get; set; } = [];
+        public static List<RectanglePattern> RectanglePatterns { get; set; } = [];
 
         readonly Box<int> _size;
         readonly List<int> _shapeCounts;
 
+        public record RectanglePattern(int Width, int Height, Dictionary<int, int> Recipe)
+        {
+            public int TotalCells => Width * Height;
+            public int TotalShapes => Recipe.Values.Sum();
+            
+            public override string ToString() => 
+                $"{Width}x{Height} ({TotalCells} cells) = {string.Join(" + ", Recipe.Select(kvp => $"{kvp.Value}×Present{kvp.Key}"))}";
+        }
 
         public Region(Box<int> size, List<int> shapeCounts)
         {
@@ -91,8 +100,34 @@ public class Day12
             var height = _size.Height;
             var board = new bool[height * width];
             var counts = _shapeCounts.ToArray();
-            var memo = new Dictionary<long, bool>();
             
+            // OPTIMIZATION: Check if this region exactly matches a known rectangle pattern
+            foreach (var pattern in RectanglePatterns)
+            {
+                if ((pattern.Width == width && pattern.Height == height) ||
+                    (pattern.Width == height && pattern.Height == width))
+                {
+                    // Check if our counts exactly match the pattern recipe
+                    bool exactMatch = true;
+                    for (int i = 0; i < counts.Length; i++)
+                    {
+                        int needed = pattern.Recipe.TryGetValue(i, out int n) ? n : 0;
+                        if (counts[i] != needed)
+                        {
+                            exactMatch = false;
+                            break;
+                        }
+                    }
+                    
+                    if (exactMatch)
+                    {
+                        return true; // This region exactly matches a known fillable pattern!
+                    }
+                }
+            }
+            
+            // Fall back to full backtracking search
+            var memo = new Dictionary<long, bool>();
             return TryPlace(0, counts, board, width, height, memo);
         }
 
@@ -233,6 +268,160 @@ public class Day12
                 }
             }
         }
+
+        public static void FindRectanglePatterns(int maxShapes = 6)
+        {
+            RectanglePatterns.Clear();
+            
+            Console.WriteLine($"Searching for rectangle patterns (2-{maxShapes} shapes)...");
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            
+            for (int totalShapes = 2; totalShapes <= maxShapes; totalShapes++)
+            {
+                FindPatternsWithNShapes(totalShapes);
+            }
+            
+            sw.Stop();
+            Console.WriteLine($"Found {RectanglePatterns.Count} unique rectangle patterns in {sw.ElapsedMilliseconds}ms");
+            
+            // Show some examples
+            var bySize = RectanglePatterns.GroupBy(p => p.TotalCells).OrderBy(g => g.Key).Take(5);
+            foreach (var group in bySize)
+            {
+                Console.WriteLine($"  {group.Key} cells: {string.Join(", ", group.Take(2))}");
+            }
+        }
+
+        private static void FindPatternsWithNShapes(int n)
+        {
+            GenerateDistributions(n, 0, new int[Presents.Count], (distribution) =>
+            {
+                int totalCells = 0;
+                for (int i = 0; i < distribution.Length; i++)
+                {
+                    totalCells += distribution[i] * Presents[i].Shapes[0].CellCount;
+                }
+                
+                if (totalCells == 0) return;
+                
+                for (int w = 1; w <= totalCells; w++)
+                {
+                    if (totalCells % w == 0)
+                    {
+                        int h = totalCells / w;
+                        
+                        if (TryFillRectangle(w, h, distribution))
+                        {
+                            var recipe = new Dictionary<int, int>();
+                            for (int i = 0; i < distribution.Length; i++)
+                            {
+                                if (distribution[i] > 0)
+                                    recipe[i] = distribution[i];
+                            }
+                            
+                            bool isDup = RectanglePatterns.Any(p => 
+                                ((p.Width == w && p.Height == h) || (p.Width == h && p.Height == w)) &&
+                                p.Recipe.Count == recipe.Count &&
+                                p.Recipe.All(kvp => recipe.TryGetValue(kvp.Key, out int v) && v == kvp.Value));
+                            
+                            if (!isDup)
+                            {
+                                RectanglePatterns.Add(new RectanglePattern(w, h, recipe));
+                            }
+                            
+                            return;
+                        }
+                    }
+                }
+            });
+        }
+
+        private static void GenerateDistributions(int remaining, int presentIdx, int[] counts, Action<int[]> action)
+        {
+            if (remaining == 0)
+            {
+                action(counts);
+                return;
+            }
+            
+            if (presentIdx >= counts.Length)
+                return;
+            
+            for (int use = 0; use <= remaining; use++)
+            {
+                counts[presentIdx] = use;
+                GenerateDistributions(remaining - use, presentIdx + 1, counts, action);
+            }
+            counts[presentIdx] = 0;
+        }
+
+        private static bool TryFillRectangle(int width, int height, int[] targetCounts)
+        {
+            var board = new bool[height * width];
+            var counts = new int[Presents.Count];
+            int targetCells = width * height;
+            
+            var cts = new System.Threading.CancellationTokenSource();
+            cts.CancelAfter(500);
+            
+            try
+            {
+                return TryPlaceShapesForPattern(board, width, height, 0, counts, targetCounts, targetCells, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryPlaceShapesForPattern(bool[] board, int width, int height, int presentIdx, int[] counts, 
+            int[] targetCounts, int targetCells, System.Threading.CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            
+            int filledCells = board.Count(c => c);
+            if (filledCells == targetCells)
+            {
+                for (int i = 0; i < counts.Length; i++)
+                {
+                    if (counts[i] != targetCounts[i])
+                        return false;
+                }
+                return true;
+            }
+            
+            if (presentIdx >= Presents.Count)
+                return false;
+            
+            if (counts[presentIdx] >= targetCounts[presentIdx])
+                return TryPlaceShapesForPattern(board, width, height, presentIdx + 1, counts, targetCounts, targetCells, ct);
+            
+            foreach (var shape in Presents[presentIdx].Shapes)
+            {
+                int sh = shape.Height;
+                int sw = shape.Width;
+                
+                for (int y = 0; y <= height - sh; y++)
+                {
+                    for (int x = 0; x <= width - sw; x++)
+                    {
+                        if (CanPlaceShape(shape, board, width, x, y))
+                        {
+                            PlaceShape(shape, board, width, x, y, true);
+                            counts[presentIdx]++;
+                            
+                            if (TryPlaceShapesForPattern(board, width, height, presentIdx, counts, targetCounts, targetCells, ct))
+                                return true;
+                            
+                            counts[presentIdx]--;
+                            PlaceShape(shape, board, width, x, y, false);
+                        }
+                    }
+                }
+            }
+            
+            return TryPlaceShapesForPattern(board, width, height, presentIdx + 1, counts, targetCounts, targetCells, ct);
+        }
     }
 
     public class Present
@@ -320,6 +509,9 @@ public class Day12
             {
                 Region.Presents = presents;
                 Region.PresentSizeOrder = [.. Enumerable.Range(0, presents.Count).OrderBy(x => -Region.Presents[x].Shapes[0].CellCount)];
+                
+                // Find all rectangle patterns (2-6 shapes)
+                Region.FindRectanglePatterns(6);
             }
 
             if (presents.Count < n)
