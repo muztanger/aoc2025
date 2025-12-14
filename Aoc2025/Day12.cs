@@ -56,8 +56,7 @@ public class Day12
     public class Region
     {
         public static List<Present> Presents = [];
-        public static List<int> PresentSizeOrder { get; set; } = [];
-
+        
         readonly Box<int> _size;
         readonly List<int> _shapeCounts;
 
@@ -90,7 +89,6 @@ public class Day12
             var height = _size.Height;
             var totalRegionCells = width * height;
             
-            // QUICK CHECK: Validate total cell count
             int requiredCells = 0;
             for (int i = 0; i < _shapeCounts.Count; i++)
             {
@@ -102,19 +100,7 @@ public class Day12
                 }
             }
 
-            // If we need more cells than available, it's impossible
-            if (requiredCells * 1.3 < totalRegionCells)
-            {
-                return true;
-            }
-            else return false;
-
-                var board = new bool[height * width];
-            var counts = _shapeCounts.ToArray();
-            
-            // Full backtracking search
-            var memo = new Dictionary<long, bool>();
-            return TryPlace(0, counts, board, width, height, memo);
+            return requiredCells * 1.2 < totalRegionCells;
         }
 
         private static long ComputeBoardHash(bool[] board, int[] counts)
@@ -163,10 +149,9 @@ public class Day12
             if (presentType == Presents.Count)
                 return counts.All(c => c == 0);
 
-            var presentIndex = Region.PresentSizeOrder[presentType];
-            if (counts[presentIndex] == 0)
+            if (counts[presentType] == 0)
             {
-                return TryPlace(presentType + 1, counts, board, width, height, memo);
+                return TryPlace((int)(presentType + 1), counts, board, width, height, memo);
             }
 
             // Check memoization cache
@@ -176,7 +161,7 @@ public class Day12
                 return cachedResult;
             }
 
-            var shapes = Presents[presentIndex].Shapes;
+            var shapes = Presents[presentType].Shapes;
             bool result = false;
 
             for (int shapeIdx = 0; shapeIdx < shapes.Count; shapeIdx++)
@@ -194,16 +179,16 @@ public class Day12
                         if (CanPlaceShape(shape, board, width, x, y))
                         {
                             PlaceShape(shape, board, width, x, y, true);
-                            counts[presentIndex]--;
-                            if (TryPlace(presentType, counts, board, width, height, memo))
+                            counts[presentType]--;
+                            if (TryPlace((int)presentType, counts, board, width, height, memo))
                             {
                                 result = true;
-                                counts[presentIndex]++;
+                                counts[presentType]++;
                                 PlaceShape(shape, board, width, x, y, false);
                                 memo[stateHash] = result;
                                 return result;
                             }
-                            counts[presentIndex]++;
+                            counts[presentType]++;
                             PlaceShape(shape, board, width, x, y, false);
                         }
                     }
@@ -340,7 +325,6 @@ public class Day12
             if (presents.Count == n && Region.Presents.Count == 0)
             {
                 Region.Presents = presents;
-                Region.PresentSizeOrder = [.. Enumerable.Range(0, presents.Count).OrderBy(x => -Region.Presents[x].Shapes[0].CellCount)];
             }
 
             if (presents.Count < n)
@@ -413,64 +397,6 @@ public class Day12
         Assert.AreEqual("2", result);
     }
 
-    [TestMethod]
-    public void Day12_Part1_Example01_Performance()
-    {
-        var input = """
-            0:
-            ###
-            ##.
-            ##.
-
-            1:
-            ###
-            ##.
-            .##
-
-            2:
-            .##
-            ###
-            ##.
-
-            3:
-            ##.
-            ###
-            ##.
-
-            4:
-            ###
-            #..
-            ###
-
-            5:
-            ###
-            .#.
-            ###
-
-            4x4: 0 0 0 0 2 0
-            12x5: 1 0 1 0 2 2
-            12x5: 1 0 1 0 3 2
-            """;
-
-        // Single run measurement
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var result = Part1(Common.GetLines(input));
-        sw.Stop();
-
-        Console.WriteLine($"Single execution time: {sw.ElapsedMilliseconds}ms");
-        Console.WriteLine($"Result: {result}");
-    }
-    
-    [TestMethod]
-    public void Day12_Part1_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
     [TestMethod]
     public void Day12_Part1()
     {
