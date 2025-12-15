@@ -1,13 +1,13 @@
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Advent_of_Code_2025;
 
 [TestClass]
 public class Day08
 {
-    private static string Part1(IEnumerable<string> input)
+    private static string Part1(IEnumerable<string> input, int n)
     {
-        var result = 0;
         var boxes = new List<Pos3<int>>();
         foreach (var line in input)
         {
@@ -15,32 +15,46 @@ public class Day08
             var (x, y, z) = line.Trim().Split(',').Select(s => int.Parse(s)).Take(3).ToArray();
             boxes.Add(new Pos3<int>(x, y, z));
         }
+        Console.WriteLine($"Boxes: {string.Join(",", boxes)}");
         var circuits = new List<HashSet<Pos3<int>>>();
-
-        var lastCount = -1;
-        while (boxes.Count > 1)
+        var connected = new HashSet<(Pos3<int>, Pos3<int>)>();
+        var connections = 0;
+        while (true)
         {
-            var minDist = int.MaxValue;
+            var minDist = double.MaxValue;
             Pos3<int>? minP1 = null;
             Pos3<int>? minP2 = null;
+            var isFound = false;
             for (int i = 0; i < boxes.Count - 1; i++)
             {
                 var p1 = boxes[i];
                 for (int j = i + 1; j < boxes.Count; j++)
                 {
                     var p2 = boxes[j];
+                    if (connected.Contains((p1, p2)) || connected.Contains((p2, p1)))
+                    {
+                        continue;
+                    }
+                    isFound = true;
+               
                     var dp = p1.Dist<double>(p2);
                     if (dp < minDist)
                     {
-                        minP1 = p1;
-                        minP2 = p2;
+                        minDist = dp;
+                        minP1 = new Pos3<int>(p1);
+                        minP2 = new Pos3<int>(p2);
                     }
                 }
             }
-            {
-                boxes.Remove(minP1);
-                boxes.Remove(minP2);
+            if (!isFound) break;
+            if (connections == n) break;
+            connections++;
 
+            Assert.IsNotNull(minP1);
+            Assert.IsNotNull(minP2);
+            connected.Add((minP1, minP2));
+
+            {
                 HashSet<Pos3<int>>? c1 = null;
                 HashSet<Pos3<int>>? c2 = null;
                 foreach (var circuit in circuits)
@@ -72,15 +86,17 @@ public class Day08
                 }
                 else if (c1 is not null && c2 is not null)
                 {
+                    if (c1 == c2) continue;
                     circuits.Remove(c1);
                     circuits.Remove(c2);
-                    circuits.Add((HashSet<Pos3<int>>)c1.Union(c2));
+                    circuits.Add([.. c1.Union(c2)]);
                 }
             }
         }
 
         Console.WriteLine(string.Join("\n", circuits.Select(c => string.Join(",", c))));
-        return result.ToString();
+        Console.WriteLine(string.Join(",", circuits.Select(x => x.Count)));
+        return circuits.Select(x => x.Count).OrderDescending().Take(3).Aggregate((a, x) => (a == 0 ? 1 : a) * x).ToString();
     }
     
     private static string Part2(IEnumerable<string> input)
@@ -117,24 +133,14 @@ public class Day08
             984,92,344
             425,690,689
             """;
-        var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day08_Part1_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        var result = Part1(Common.GetLines(input), 10);
+        Assert.AreEqual("40", result);
     }
     
     [TestMethod]
     public void Day08_Part1()
     {
-        var result = Part1(Common.DayInput(nameof(Day08), "2025"));
+        var result = Part1(Common.DayInput(nameof(Day08), "2025"), 1000);
         Assert.AreEqual("", result);
     }
     

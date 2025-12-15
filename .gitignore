@@ -398,5 +398,5 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Advent of Code 2024
-/Aoc2024/Cookie.dat
+/Aoc2025/Cookie.dat
 Input/

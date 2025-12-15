@@ -17,7 +17,7 @@ Ideas on what to try out:
 | 5   | :star: :star: | 49 ms ||
 | 6   | :star: :star: | 261 ms ||
 | 7   | :star: | ||
-| 8   |  | ||
+| 8   | :star: | ||
 | 9   | :star: | ||
 | 10  | :star: | ||
 | 11  |  | ||
