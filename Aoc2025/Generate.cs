@@ -8,8 +8,8 @@ public class Generate
     [TestMethod]
     public void GenerateDay()
     {
-        int day = 8;
-        var year = 2017; // DateTime.Now.Year
+        int day = 11;
+        var year = 2025; // DateTime.Now.Year
         if (DateTime.Now.Month == 12 && DateTime.Now.Day <= 12)
         {
             day = DateTime.Now.Day;
