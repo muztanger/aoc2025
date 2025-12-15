@@ -397,6 +397,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# Advent of Code 2024
-/Aoc2025/Cookie.dat
+# Advent of Code
+Cookie.dat
 Input/
