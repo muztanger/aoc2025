@@ -10,8 +10,8 @@ public class Day07
 {
     class Tachyon
     {
-        public Pos<int> Pos {  get; set; }
-    
+        public Pos<int> Pos {  get; init; } = new(0,0);
+
         public (Tachyon t1,Tachyon t2) Split()
         {
             return (new Tachyon { Pos = new(Pos.x - 1, Pos.y + 1) },
@@ -123,7 +123,6 @@ public class Day07
 
     private static string Part2(IEnumerable<string> input)
     {
-        var result = 0L;
         var box = new Box<int>(input.First().Length - 1, input.Count() - 1);
         var manifold = input.ToList();
 

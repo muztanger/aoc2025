@@ -105,6 +105,7 @@ public class Day06
         }
 
         {
+            Assert.IsNotNull(op);
             var aggregate = numbers[0];
             foreach (var x in numbers.Skip(1))
             {

@@ -1,20 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157 d18.0
+VisualStudioVersion = 18.0.11205.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aoc2025", "Aoc2025.csproj", "{90D04610-419E-9473-5332-BE674D2A70FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{90D04610-419E-9473-5332-BE674D2A70FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{90D04610-419E-9473-5332-BE674D2A70FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90D04610-419E-9473-5332-BE674D2A70FA}.Debug|x64.ActiveCfg = Debug|x64
 		{90D04610-419E-9473-5332-BE674D2A70FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{90D04610-419E-9473-5332-BE674D2A70FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90D04610-419E-9473-5332-BE674D2A70FA}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
