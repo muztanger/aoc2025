@@ -31,7 +31,7 @@ public class Day11
 
         override public string ToString()
         {
-            return $"{Name}({string.Join(", ", Connections.Select(c => c.Name))})";
+            return $"{Name}({string.Join(", ", Connections)})";
         }
     }
     private static string Part1(IEnumerable<string> input)
@@ -50,7 +50,7 @@ public class Day11
         {
             var name = line.Split(':')[0];
             var node = nodes.First(n => n.Name == name);
-            var connections = line.Split(':')[1].Split(',').Select(c => nodes.First(n => n.Name == c.Trim())).ToList();
+            var connections = line.Split(':')[1].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(c => nodes.First(n => n.Name == c.Trim())).ToList();
             node.Connections.AddRange(connections);
         }
         Console.WriteLine(nodes.First(n => n.Name == "you"));
