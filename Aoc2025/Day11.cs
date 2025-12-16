@@ -3,11 +3,11 @@ namespace Advent_of_Code_2025;
 [TestClass]
 public class Day11
 {
-    class Nod
+    class Node
     {
         public string Name { get; }
-        public List<Nod> Connections { get; set; } = [];
-        public Nod(string name)
+        public List<Node> Connections { get; set; } = [];
+        public Node(string name)
         {
             Name = name;
         }
@@ -19,7 +19,7 @@ public class Day11
                 return false;
             }
 
-            var other = (Nod)obj;
+            var other = (Node)obj;
 
             return Name.Equals(other.Name);
         }
@@ -33,17 +33,26 @@ public class Day11
         {
             return $"{Name}({string.Join(", ", Connections)})";
         }
+
+        public int PathsToOut()
+        {
+            if (Name == "out")
+            {
+                return 1;
+            }
+            return Connections.Sum(c => c.PathsToOut());
+        }
     }
     private static string Part1(IEnumerable<string> input)
     {
         var result = new StringBuilder();
-        var nodes = new HashSet<Nod>();
+        var nodes = new HashSet<Node>();
         foreach (var line in input)
         {
             var split = line.Replace(":", "").Split(' ');
             foreach (var name in split)
             {
-                nodes.Add(new Nod(name));
+                nodes.Add(new Node(name));
             }
         }
         foreach (var line in input)
@@ -53,8 +62,8 @@ public class Day11
             var connections = line.Split(':')[1].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(c => nodes.First(n => n.Name == c.Trim())).ToList();
             node.Connections.AddRange(connections);
         }
-        Console.WriteLine(nodes.First(n => n.Name == "you"));
-        return result.ToString();
+        //Console.WriteLine(nodes.First(n => n.Name == "you"));
+        return nodes.First(n => n.Name == "you").PathsToOut().ToString();
     }
     
     private static string Part2(IEnumerable<string> input)
