@@ -3,7 +3,7 @@
 This year I am reusing some previous boiler plate and I might be testing new features from .NET 10
 
 Ideas on what to try out:
-- [ ]...
+- [x] Using Claude Sonnet 4.5 when stuck
 
 
 ## Progress
@@ -20,6 +20,6 @@ Ideas on what to try out:
 | 8   | :star: | ||
 | 9   | :star: | ||
 | 10  | :star: | ||
-| 11  |  | ||
+| 11  | :star: :star: | 68 ms ||
 | 12  | :star: | ||
 
