@@ -42,10 +42,32 @@ public class Day11
             }
             return Connections.Sum(c => c.PathsToOut());
         }
+
+        public long PathsToOutViaDacAndFft(bool hasDac = false, bool hasFft = false, Dictionary<(string, bool, bool), long> memo = null)
+        {
+            memo ??= new Dictionary<(string, bool, bool), long>();
+            
+            var key = (Name, hasDac, hasFft);
+            if (memo.ContainsKey(key))
+            {
+                return memo[key];
+            }
+
+            if (Name == "out")
+            {
+                return (hasDac && hasFft) ? 1 : 0;
+            }
+
+            bool newHasDac = hasDac || Name == "dac";
+            bool newHasFft = hasFft || Name == "fft";
+
+            long result = Connections.Sum(c => c.PathsToOutViaDacAndFft(newHasDac, newHasFft, memo));
+            memo[key] = result;
+            return result;
+        }
     }
     private static string Part1(IEnumerable<string> input)
     {
-        var result = new StringBuilder();
         var nodes = new HashSet<Node>();
         foreach (var line in input)
         {
@@ -68,13 +90,25 @@ public class Day11
     
     private static string Part2(IEnumerable<string> input)
     {
-        var result = new StringBuilder();
+        var nodes = new HashSet<Node>();
         foreach (var line in input)
         {
+            var split = line.Replace(":", "").Split(' ');
+            foreach (var name in split)
+            {
+                nodes.Add(new Node(name));
+            }
         }
-        return result.ToString();
+        foreach (var line in input)
+        {
+            var name = line.Split(':')[0];
+            var node = nodes.First(n => n.Name == name);
+            var connections = line.Split(':')[1].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(c => nodes.First(n => n.Name == c.Trim())).ToList();
+            node.Connections.AddRange(connections);
+        }
+        return nodes.First(n => n.Name == "svr").PathsToOutViaDacAndFft().ToString();
     }
-    
+
     [TestMethod]
     public void Day11_Part1_Example01()
     {
@@ -91,44 +125,38 @@ public class Day11
             iii: out
             """;
         var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("5", result);
     }
     
-    [TestMethod]
-    public void Day11_Part1_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part1(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
+  
     
     [TestMethod]
     public void Day11_Part1()
     {
         var result = Part1(Common.DayInput(nameof(Day11), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("494", result);
     }
     
     [TestMethod]
     public void Day11_Part2_Example01()
     {
         var input = """
-            <TODO>
+            svr: aaa bbb
+            aaa: fft
+            fft: ccc
+            bbb: tty
+            tty: ccc
+            ccc: ddd eee
+            ddd: hub
+            hub: fff
+            eee: dac
+            dac: fff
+            fff: ggg hhh
+            ggg: out
+            hhh: out
             """;
         var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day11_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("2", result);
     }
     
     [TestMethod]
