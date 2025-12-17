@@ -15,7 +15,6 @@ public class Day08
             var (x, y, z) = line.Trim().Split(',').Select(s => int.Parse(s)).Take(3).ToArray();
             boxes.Add(new Pos3<int>(x, y, z));
         }
-        Console.WriteLine($"Boxes: {string.Join(",", boxes)}");
         var circuits = new List<HashSet<Pos3<int>>>();
         var connected = new HashSet<(Pos3<int>, Pos3<int>)>();
         var connections = 0;
@@ -87,8 +86,6 @@ public class Day08
             }
         }
 
-        Console.WriteLine(string.Join("\n", circuits.Select(c => string.Join(",", c))));
-        Console.WriteLine(string.Join(",", circuits.Select(x => x.Count)));
         return circuits.Select(x => x.Count).OrderDescending().Take(3).Aggregate((a, x) => (a == 0 ? 1 : a) * x).ToString();
     }
     
@@ -173,8 +170,6 @@ public class Day08
             {
                 result.Add(p1.x * p2.x);
             }
-
-            Console.WriteLine(circuits.Count);
         }
 
 
