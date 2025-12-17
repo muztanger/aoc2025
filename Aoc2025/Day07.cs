@@ -115,7 +115,7 @@ public class Day07
             }
             else if (SouthWest is not null || SouthEast is not null)
             {
-                return SouthWest?.Count() ?? 0 + SouthEast?.Count() ?? 0;
+                return (SouthWest?.Count() ?? 0) + (SouthEast?.Count() ?? 0);
             }
             return 1;
         }
@@ -221,7 +221,7 @@ public class Day07
     public void Day07_Part2_Example01()
     {
         var result = Part2(Common.GetLines(example));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("40", result);
     }
     
     [TestMethod]
