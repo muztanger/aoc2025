@@ -19,51 +19,44 @@ public class Day08
         var circuits = new List<HashSet<Pos3<int>>>();
         var connected = new HashSet<(Pos3<int>, Pos3<int>)>();
         var connections = 0;
-        while (true)
+        var pairQueue = new PriorityQueue<(Pos3<int> p1, Pos3<int> p2), double>();
+
+        for (int i = 0; i < boxes.Count - 1; i++)
         {
-            var minDist = double.MaxValue;
-            Pos3<int>? minP1 = null;
-            Pos3<int>? minP2 = null;
-            var isFound = false;
-            for (int i = 0; i < boxes.Count - 1; i++)
+            var p1 = boxes[i];
+            for (int j = i + 1; j < boxes.Count; j++)
             {
-                var p1 = boxes[i];
-                for (int j = i + 1; j < boxes.Count; j++)
-                {
-                    var p2 = boxes[j];
-                    if (connected.Contains((p1, p2)) || connected.Contains((p2, p1)))
-                    {
-                        continue;
-                    }
-                    isFound = true;
-               
-                    var dp = p1.Dist<double>(p2);
-                    if (dp < minDist)
-                    {
-                        minDist = dp;
-                        minP1 = new Pos3<int>(p1);
-                        minP2 = new Pos3<int>(p2);
-                    }
-                }
+                var p2 = boxes[j];
+                var dp = p1.Dist<double>(p2);
+                pairQueue.Enqueue((p1, p2), dp);
             }
-            if (!isFound) break;
+        }
+        while (pairQueue.Count > 0)
+        {
+            var (p1, p2) = pairQueue.Dequeue();
+                
+            if (connected.Contains((p1, p2)) || connected.Contains((p2, p1)))
+            {
+                continue;
+            }
+                
             if (connections == n) break;
             connections++;
 
-            Assert.IsNotNull(minP1);
-            Assert.IsNotNull(minP2);
-            connected.Add((minP1, minP2));
+            Assert.IsNotNull(p1);
+            Assert.IsNotNull(p2);
+            connected.Add((p1, p2));
 
             {
                 HashSet<Pos3<int>>? c1 = null;
                 HashSet<Pos3<int>>? c2 = null;
                 foreach (var circuit in circuits)
                 {
-                    if (circuit.Contains(minP1))
+                    if (circuit.Contains(p1))
                     {
                         c1 = circuit;
                     }
-                    if (circuit.Contains(minP2))
+                    if (circuit.Contains(p2))
                     {
                         c2 = circuit;
                     }
@@ -72,17 +65,17 @@ public class Day08
                 {
                     circuits.Add(new HashSet<Pos3<int>>()
                     {
-                        minP1,
-                        minP2
+                        p1,
+                        p2
                     });
                 }
                 else if (c1 is not null && c2 is null)
                 {
-                    c1.Add(minP2);
+                    c1.Add(p2);
                 }
                 else if (c1 is null && c2 is not null)
                 {
-                    c2.Add(minP1);
+                    c2.Add(p1);
                 }
                 else if (c1 is not null && c2 is not null)
                 {
@@ -101,97 +94,92 @@ public class Day08
     
     private static string Part2(IEnumerable<string> input)
     {
-        var boxes = new List<Pos3<int>>();
+        var boxes = new List<Pos3<long>>();
         foreach (var line in input)
         {
             if (string.IsNullOrEmpty(line)) continue;
-            var (x, y, z) = line.Trim().Split(',').Select(s => int.Parse(s)).Take(3).ToArray();
-            boxes.Add(new Pos3<int>(x, y, z));
+            var (x, y, z) = line.Trim().Split(',').Select(s => long.Parse(s)).Take(3).ToArray();
+            boxes.Add(new Pos3<long>(x, y, z));
         }
-        Console.WriteLine($"Boxes: {string.Join(",", boxes)}");
-        var circuits = new List<HashSet<Pos3<int>>>();
-        var connected = new HashSet<(Pos3<int>, Pos3<int>)>();
-        var result = 0;
-        while (true)
+
+        var circuits = new List<HashSet<Pos3<long>>>();
+        var connected = new HashSet<(Pos3<long>, Pos3<long>)>();
+        var result = new List<long>();
+
+        var pairQueue = new PriorityQueue<(Pos3<long> p1, Pos3<long> p2), double>();
+        for (int i = 0; i < boxes.Count - 1; i++)
         {
-            var minDist = double.MaxValue;
-            Pos3<int>? minP1 = null;
-            Pos3<int>? minP2 = null;
-            var isFound = false;
-            for (int i = 0; i < boxes.Count - 1; i++)
+            var p1 = boxes[i];
+            for (int j = i + 1; j < boxes.Count; j++)
             {
-                var p1 = boxes[i];
-                for (int j = i + 1; j < boxes.Count; j++)
-                {
-                    var p2 = boxes[j];
-                    if (connected.Contains((p1, p2)) || connected.Contains((p2, p1)))
-                    {
-                        continue;
-                    }
-                    isFound = true;
-
-                    var dp = p1.Dist<double>(p2);
-                    if (dp < minDist)
-                    {
-                        minDist = dp;
-                        minP1 = new Pos3<int>(p1);
-                        minP2 = new Pos3<int>(p2);
-                    }
-                }
-            }
-            if (!isFound) break;
-
-            Assert.IsNotNull(minP1);
-            Assert.IsNotNull(minP2);
-            connected.Add((minP1, minP2));
-
-            {
-                HashSet<Pos3<int>>? c1 = null;
-                HashSet<Pos3<int>>? c2 = null;
-                foreach (var circuit in circuits)
-                {
-                    if (circuit.Contains(minP1))
-                    {
-                        c1 = circuit;
-                    }
-                    if (circuit.Contains(minP2))
-                    {
-                        c2 = circuit;
-                    }
-                }
-                if (c1 is null && c2 is null)
-                {
-                    circuits.Add(new HashSet<Pos3<int>>()
-                    {
-                        minP1,
-                        minP2
-                    });
-                    result = minP1.x * minP2.x;
-                }
-                else if (c1 is not null && c2 is null)
-                {
-                    c1.Add(minP2);
-                    result = minP1.x * minP2.x;
-
-                }
-                else if (c1 is null && c2 is not null)
-                {
-                    c2.Add(minP1);
-                    result = minP1.x * minP2.x;
-
-                }
-                else if (c1 is not null && c2 is not null)
-                {
-                    if (c1 == c2) continue;
-                    circuits.Remove(c1);
-                    circuits.Remove(c2);
-                    circuits.Add([.. c1.Union(c2)]);
-                }
+                var p2 = boxes[j];
+                var dp = p1.Dist<double>(p2);
+                pairQueue.Enqueue((p1, p2), dp);
             }
         }
 
+        while (pairQueue.Count > 0)
+        {
+            var (p1, p2) = pairQueue.Dequeue();
 
-        return result.ToString();
+            if (connected.Contains((p1, p2)) || connected.Contains((p2, p1)))
+            {
+                continue;
+            }
+
+            Assert.IsNotNull(p1);
+            Assert.IsNotNull(p2);
+            connected.Add((p1, p2));
+
+            HashSet<Pos3<long>>? c1 = null;
+            HashSet<Pos3<long>>? c2 = null;
+            foreach (var circuit in circuits)
+            {
+                if (circuit.Contains(p1))
+                {
+                    c1 = circuit;
+                }
+                if (circuit.Contains(p2))
+                {
+                    c2 = circuit;
+                }
+            }
+            if (c1 is null && c2 is null)
+            {
+                circuits.Add(new HashSet<Pos3<long>>()
+                    {
+                        p1,
+                        p2
+                    });
+            }
+            else if (c1 is not null && c2 is null)
+            {
+                c1.Add(p2);
+            }
+            else if (c1 is null && c2 is not null)
+            {
+                c2.Add(p1);
+            }
+            else if (c1 is not null && c2 is not null)
+            {
+                if (c1 == c2) continue;
+                circuits.Remove(c1);
+                circuits.Remove(c2);
+
+                circuits.Add([.. c1.Union(c2)]);
+            }
+
+            if (circuits.Count == 1)
+            {
+                result.Add(p1.x * p2.x);
+            }
+
+            Console.WriteLine(circuits.Count);
+        }
+
+
+        result.Reverse();
+        return string.Concat(result.Take(1));
     }
 
     string example = """
@@ -230,7 +218,7 @@ public class Day08
         var result = Part1(Common.DayInput(nameof(Day08), "2025"), 1000);
         Assert.AreEqual("103488", result);
     }
-    
+
     [TestMethod]
     public void Day08_Part2_Example01()
     {
@@ -239,20 +227,12 @@ public class Day08
     }
     
     [TestMethod]
-    public void Day08_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
     public void Day08_Part2()
     {
         var result = Part2(Common.DayInput(nameof(Day08), "2025"));
-        Assert.AreEqual("", result);
+        Assert.IsGreaterThan(170050948, long.Parse(result));
+        Assert.IsGreaterThan(440136955, long.Parse(result));
+        Assert.AreEqual("8759985540", result);
     }
     
 }
