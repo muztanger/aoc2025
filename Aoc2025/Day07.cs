@@ -84,6 +84,7 @@ public class Day07
         public Node? SouthWest { get; set; } = null;
         public Node? SouthEast { get; set; } = null;
         public Node? South { get; set; } = null;
+        private long? _cachedCount = null;
 
         public Node(Pos<int> pos)
         {
@@ -109,15 +110,27 @@ public class Day07
 
         public long Count()
         {
+            if (_cachedCount.HasValue)
+            {
+                return _cachedCount.Value;
+            }
+
+            long result;
             if (South is not null)
             {
-                return South.Count();
+                result = South.Count();
             }
             else if (SouthWest is not null || SouthEast is not null)
             {
-                return (SouthWest?.Count() ?? 0) + (SouthEast?.Count() ?? 0);
+                result = (SouthWest?.Count() ?? 0) + (SouthEast?.Count() ?? 0);
             }
-            return 1;
+            else
+            {
+                result = 1;
+            }
+
+            _cachedCount = result;
+            return result;
         }
     }
 
@@ -225,20 +238,10 @@ public class Day07
     }
     
     [TestMethod]
-    public void Day07_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
     public void Day07_Part2()
     {
         var result = Part2(Common.DayInput(nameof(Day07), "2025"));
-        Assert.AreEqual("", result);
+        Assert.AreEqual("16716444407407", result);
     }
     
 }
