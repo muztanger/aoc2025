@@ -144,6 +144,7 @@ public class Day10
             }
         }
 
+        private const int MEMORY_LIMIT = 10_000_000;
         Lights _lights;
         readonly Lights _diagram;
         List<List<int>> _wirings;
@@ -222,13 +223,9 @@ public class Day10
 
         internal int FewestPressesToJoltage()
         {
-            // Build wiring matrix for mathematical analysis
-            var target = new int[_requirements.Values.Count];
-            for (int i = 0; i < target.Length; i++)
-            {
-                target[i] = _requirements.Values[i];
-            }
+            var target = _requirements.Values.ToArray();
             
+            // Build wiring matrix
             var wiringMatrix = new int[_wirings.Count][];
             for (int w = 0; w < _wirings.Count; w++)
             {
@@ -239,41 +236,181 @@ public class Day10
                 }
             }
             
-            // Use BFS with optimized state representation
-            var visited = new Dictionary<long, int>();
-            var queue = new PriorityQueue<int[], int>();
+            return BFSWithPruning(wiringMatrix, target);
+        }
+
+        private static int BFSWithPruning(int[][] wiringMatrix, int[] target)
+        {
+            int targetLen = target.Length;
+            int numButtons = wiringMatrix.Length;
             
-            var start = new int[target.Length];
-            visited[ComputeHash(start)] = 0;
-            queue.Enqueue(start, 0);
+            // Step 1: Find the shortest sequence to reach ANY equal state from (0,0,...,0)
+            var (equalValue, pressesToEqual, buttonSequence) = FindFirstEqualState(wiringMatrix, targetLen);
+            
+            if (equalValue < 0)
+            {
+                // No equal state found, fall back to direct search
+                Console.WriteLine("No equal state found, using direct search");
+                return DirectBFS(wiringMatrix, target);
+            }
+            
+            Console.WriteLine($"Found equal state at value {equalValue} in {pressesToEqual} presses");
+            
+            // Step 2: Calculate how many repetitions we need
+            int minTarget = int.MaxValue;
+            for (int i = 0; i < targetLen; i++)
+            {
+                if (target[i] < minTarget)
+                    minTarget = target[i];
+            }
+            
+            // Try different numbers of repetitions, starting from the maximum
+            int maxRepetitions = minTarget / equalValue;
+            
+            for (int repetitions = maxRepetitions; repetitions >= 0; repetitions--)
+            {
+                int baseValue = repetitions * equalValue;
+                int totalPresses = repetitions * pressesToEqual;
+                
+                Console.WriteLine($"Trying {repetitions} repetitions to reach base value {baseValue} with {totalPresses} presses");
+                
+                // Step 3: Search from (baseValue, baseValue, ...) to target
+                var startState = new int[targetLen];
+                for (int i = 0; i < targetLen; i++)
+                {
+                    startState[i] = baseValue;
+                }
+                
+                int remainingPresses = DirectBFSFromState(wiringMatrix, startState, target);
+                
+                if (remainingPresses >= 0)
+                {
+                    Console.WriteLine($"Success! {remainingPresses} presses from equal state {baseValue} to target");
+                    return totalPresses + remainingPresses;
+                }
+                
+                Console.WriteLine($"Failed to reach target from equal state {baseValue}, trying lower...");
+            }
+            
+            Console.WriteLine("All equal state attempts failed, falling back to direct search");
+            return DirectBFS(wiringMatrix, target);
+        }
+
+        private static (int equalValue, int presses, List<int> sequence) FindFirstEqualState(int[][] wiringMatrix, int targetLen)
+        {
+            int numButtons = wiringMatrix.Length;
+            
+            var visited = new Dictionary<long, (int depth, List<int> path)>();
+            var queue = new Queue<(int[] state, int depth, List<int> path)>();
+            
+            var start = new int[targetLen];
+            var startHash = ComputeHashFast(start);
+            visited[startHash] = (0, new List<int>());
+            queue.Enqueue((start, 0, new List<int>()));
+            
+            int maxDepth = 100; // Limit search depth for first equal state
             
             while (queue.Count > 0)
             {
-                var current = queue.Dequeue();
-                var presses = visited[ComputeHash(current)];
+                var (state, depth, path) = queue.Dequeue();
                 
-                // Check if reached target
-                bool isTarget = true;
-                for (int i = 0; i < target.Length; i++)
+                if (depth > maxDepth) continue;
+                
+                // Check if all values are equal and non-zero
+                bool allEqual = true;
+                int firstValue = state[0];
+                
+                if (firstValue == 0)
                 {
-                    if (current[i] != target[i])
+                    allEqual = false;
+                }
+                else
+                {
+                    for (int i = 1; i < targetLen; i++)
                     {
-                        isTarget = false;
-                        break;
+                        if (state[i] != firstValue)
+                        {
+                            allEqual = false;
+                            break;
+                        }
                     }
                 }
-                if (isTarget) return presses;
                 
-                // Try each wiring
-                for (int w = 0; w < wiringMatrix.Length; w++)
+                if (allEqual && firstValue > 0)
                 {
-                    var next = new int[target.Length];
+                    return (firstValue, depth, path);
+                }
+                
+                // Try each button
+                for (int w = 0; w < numButtons; w++)
+                {
+                    var next = new int[targetLen];
+                    for (int i = 0; i < targetLen; i++)
+                    {
+                        next[i] = state[i] + wiringMatrix[w][i];
+                    }
+                    
+                    var hash = ComputeHashFast(next);
+                    int newDepth = depth + 1;
+                    
+                    if (!visited.ContainsKey(hash))
+                    {
+                        var newPath = new List<int>(path) { w };
+                        visited[hash] = (newDepth, newPath);
+                        queue.Enqueue((next, newDepth, newPath));
+                    }
+                }
+                
+                // Memory limit
+                if (visited.Count > 100000)
+                {
+                    break;
+                }
+            }
+            
+            return (-1, -1, null);
+        }
+
+        private static int DirectBFSFromState(int[][] wiringMatrix, int[] startState, int[] target)
+        {
+            int targetLen = target.Length;
+            int numButtons = wiringMatrix.Length;
+            
+            var visited = new Dictionary<long, int>();
+            var queue = new Queue<(int[] state, int depth)>();
+            
+            var startHash = ComputeHashFast(startState);
+            visited[startHash] = 0;
+            queue.Enqueue((startState, 0));
+            
+            var targetHash = ComputeHashFast(target);
+            
+            const int maxDepth = 3000;
+            
+            while (queue.Count > 0)
+            {
+                var (state, depth) = queue.Dequeue();
+                
+                var hash = ComputeHashFast(state);
+                if (hash == targetHash)
+                {
+                    return depth;
+                }
+
+                if (depth >= maxDepth)
+                {
+                    Console.WriteLine($"Max depth reached: {depth}");
+                    continue;
+                }
+                
+                // Try each button
+                for (int w = 0; w < numButtons; w++)
+                {
                     bool valid = true;
                     
-                    for (int i = 0; i < target.Length; i++)
+                    for (int i = 0; i < targetLen; i++)
                     {
-                        next[i] = current[i] + wiringMatrix[w][i];
-                        if (next[i] > target[i])
+                        if (state[i] + wiringMatrix[w][i] > target[i])
                         {
                             valid = false;
                             break;
@@ -282,21 +419,110 @@ public class Day10
                     
                     if (!valid) continue;
                     
-                    var hash = ComputeHash(next);
-                    var newPresses = presses + 1;
-                    
-                    if (!visited.TryGetValue(hash, out var existing) || existing > newPresses)
+                    var next = new int[targetLen];
+                    for (int i = 0; i < targetLen; i++)
                     {
-                        visited[hash] = newPresses;
-                        queue.Enqueue(next, newPresses);
+                        next[i] = state[i] + wiringMatrix[w][i];
                     }
+                    
+                    var nextHash = ComputeHashFast(next);
+                    int newDepth = depth + 1;
+                    
+                    if (!visited.TryGetValue(nextHash, out var existing) || newDepth < existing)
+                    {
+                        visited[nextHash] = newDepth;
+                        queue.Enqueue((next, newDepth));
+                    }
+                }
+                
+                // Memory limit
+                if (visited.Count > 1000000)
+                {
+                    Console.WriteLine($"Memory limit in DirectBFSFromState. Visited: {visited.Count}");
+                    break;
                 }
             }
             
             return -1;
         }
-        
-        private static long ComputeHash(int[] levels)
+
+        private static int DirectBFS(int[][] wiringMatrix, int[] target)
+        {
+            int targetLen = target.Length;
+            int numButtons = wiringMatrix.Length;
+            
+            var visited = new Dictionary<long, int>();
+            var queue = new Queue<(int[] state, int depth)>();
+            
+            var start = new int[targetLen];
+            var startHash = ComputeHashFast(start);
+            visited[startHash] = 0;
+            queue.Enqueue((start, 0));
+            
+            var targetHash = ComputeHashFast(target);
+
+            const int maxDepth = 400;
+
+            while (queue.Count > 0)
+            {
+                var (state, depth) = queue.Dequeue();
+                
+                var hash = ComputeHashFast(state);
+                if (hash == targetHash)
+                {
+                    return depth;
+                }
+
+                if (depth >= maxDepth)
+                {
+                    Console.WriteLine("Max depth reached: " + depth);
+                    continue;
+                }
+                
+                // Try each button
+                for (int w = 0; w < numButtons; w++)
+                {
+                    bool valid = true;
+                    
+                    for (int i = 0; i < targetLen; i++)
+                    {
+                        if (state[i] + wiringMatrix[w][i] > target[i])
+                        {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    
+                    if (!valid) continue;
+                    
+                    var next = new int[targetLen];
+                    for (int i = 0; i < targetLen; i++)
+                    {
+                        next[i] = state[i] + wiringMatrix[w][i];
+                    }
+                    
+                    var nextHash = ComputeHashFast(next);
+                    int newDepth = depth + 1;
+                    
+                    if (!visited.TryGetValue(nextHash, out var existing) || newDepth < existing)
+                    {
+                        visited[nextHash] = newDepth;
+                        queue.Enqueue((next, newDepth));
+                    }
+                }
+                
+                // Memory limit
+                if (visited.Count > 10_000_000)
+                {
+                    Console.WriteLine("Memory limit in DirectBFS. Visited: " + visited.Count);
+                    break;
+                }
+            }
+            
+            return -1;
+        }
+
+        private static long ComputeHashFast(int[] levels)
         {
             long hash = 17;
             for (int i = 0; i < levels.Length; i++)
