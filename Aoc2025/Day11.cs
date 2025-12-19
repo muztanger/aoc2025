@@ -43,14 +43,14 @@ public class Day11
             return Connections.Sum(c => c.PathsToOut());
         }
 
-        public long PathsToOutViaDacAndFft(bool hasDac = false, bool hasFft = false, Dictionary<(string, bool, bool), long> memo = null)
+        public long PathsToOutViaDacAndFft(bool hasDac = false, bool hasFft = false, Dictionary<(string, bool, bool), long>? memo = null)
         {
-            memo ??= new Dictionary<(string, bool, bool), long>();
+            memo ??= [];
             
             var key = (Name, hasDac, hasFft);
-            if (memo.ContainsKey(key))
+            if (memo.TryGetValue(key, out long value))
             {
-                return memo[key];
+                return value;
             }
 
             if (Name == "out")

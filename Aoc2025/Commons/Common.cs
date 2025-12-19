@@ -1,5 +1,4 @@
-﻿using Aoc2024.Commons;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
 namespace Advent_of_Code_2025.Commons;
 public static class Common

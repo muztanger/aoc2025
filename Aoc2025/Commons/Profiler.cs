@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Aoc2024.Commons
+namespace Advent_of_Code_2025.Commons
 {
     public class Profiler
     {

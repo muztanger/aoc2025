@@ -1,8 +1,3 @@
-
-
-
-
-
 namespace Advent_of_Code_2025;
 
 [TestClass]
@@ -77,7 +72,7 @@ public class Day10
 
         class JoltageLevels
         {
-            List<int> Values;
+            internal List<int> Values;
             public JoltageLevels(List<int> values)
             {
                 Values = values;
@@ -227,44 +222,88 @@ public class Day10
 
         internal int FewestPressesToJoltage()
         {
-            var initialState = (_levels, 0);
-            var visited = new Dictionary<(JoltageLevels joltageLevels, int step), int>();
-            var queue = new Queue<((JoltageLevels joltageLevels, int step) state, int steps)>();
-            queue.Enqueue((initialState, 0));
-            visited[initialState] = 0;
+            // Build wiring matrix for mathematical analysis
+            var target = new int[_requirements.Values.Count];
+            for (int i = 0; i < target.Length; i++)
+            {
+                target[i] = _requirements.Values[i];
+            }
+            
+            var wiringMatrix = new int[_wirings.Count][];
+            for (int w = 0; w < _wirings.Count; w++)
+            {
+                wiringMatrix[w] = new int[target.Length];
+                foreach (var idx in _wirings[w])
+                {
+                    wiringMatrix[w][idx]++;
+                }
+            }
+            
+            // Use BFS with optimized state representation
+            var visited = new Dictionary<long, int>();
+            var queue = new PriorityQueue<int[], int>();
+            
+            var start = new int[target.Length];
+            visited[ComputeHash(start)] = 0;
+            queue.Enqueue(start, 0);
+            
             while (queue.Count > 0)
-            {   
-                var (currentState, steps) = queue.Dequeue();
-                var (currentJoltageLevels, currentWiringIndex) = currentState;
-                if (currentJoltageLevels.Equals(_requirements))
-                {
-                    return steps;
-                }
-                Assert.IsNotNull(currentJoltageLevels);
+            {
+                var current = queue.Dequeue();
+                var presses = visited[ComputeHash(current)];
                 
-                var newJoltageLevels = new JoltageLevels(currentJoltageLevels);
-                newJoltageLevels.Press(_wirings[currentWiringIndex]);
-                if (newJoltageLevels.IsTooHighLevel(_requirements))
+                // Check if reached target
+                bool isTarget = true;
+                for (int i = 0; i < target.Length; i++)
                 {
-                    continue;
-                }
-
-                for (var nextWiringIndex = 0; nextWiringIndex < _wirings.Count; nextWiringIndex++)
-                {
-                    var newState = (newJoltageLevels, nextWiringIndex);
-                    if (!visited.TryGetValue(newState, out var visitedCount))
+                    if (current[i] != target[i])
                     {
-                        visited[newState] = steps + 1;
-                        queue.Enqueue((newState, steps + 1));
+                        isTarget = false;
+                        break;
                     }
-                    else if (visitedCount > steps + 1)
+                }
+                if (isTarget) return presses;
+                
+                // Try each wiring
+                for (int w = 0; w < wiringMatrix.Length; w++)
+                {
+                    var next = new int[target.Length];
+                    bool valid = true;
+                    
+                    for (int i = 0; i < target.Length; i++)
                     {
-                        visited[newState] = steps + 1;
-                        queue.Enqueue((newState, steps + 1));
+                        next[i] = current[i] + wiringMatrix[w][i];
+                        if (next[i] > target[i])
+                        {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    
+                    if (!valid) continue;
+                    
+                    var hash = ComputeHash(next);
+                    var newPresses = presses + 1;
+                    
+                    if (!visited.TryGetValue(hash, out var existing) || existing > newPresses)
+                    {
+                        visited[hash] = newPresses;
+                        queue.Enqueue(next, newPresses);
                     }
                 }
             }
-            return -1; // No solution found
+            
+            return -1;
+        }
+        
+        private static long ComputeHash(int[] levels)
+        {
+            long hash = 17;
+            for (int i = 0; i < levels.Length; i++)
+            {
+                hash = hash * 31 + levels[i];
+            }
+            return hash;
         }
     }
 
@@ -313,8 +352,12 @@ public class Day10
     [TestMethod]
     public void Day10_Part2_Example01()
     {
+        var profiler = new Profiler();
+        profiler.Start();
         var result = Part2(Common.GetLines(example));
+        profiler.Stop();
         Assert.AreEqual("33", result);
+        profiler.Print();
     }
     
     [TestMethod]
@@ -324,4 +367,24 @@ public class Day10
         Assert.AreEqual("", result);
     }
     
+    [TestMethod]
+    public void Day10_Part2_RandomLine()
+    {
+        var allLines = Common.DayInput(nameof(Day10), "2025").ToList();
+        var random = new Random(42); // Fixed seed for reproducibility
+        var randomIndex = random.Next(allLines.Count);
+        
+        Console.WriteLine($"Testing line {randomIndex + 1} of {allLines.Count}");
+        Console.WriteLine($"Input: {allLines[randomIndex]}");
+        
+        var profiler = new Profiler();
+        profiler.Start();
+        var presses = Machine.Parse(allLines[randomIndex]).FewestPressesToJoltage();
+        profiler.Stop();
+        
+        Console.WriteLine($"Presses: {presses}");
+        profiler.Print();
+        
+        Assert.IsGreaterThanOrEqualTo(0, presses, $"Line {randomIndex + 1} returned {presses}");
+    }
 }
