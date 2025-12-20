@@ -346,15 +346,6 @@ public class Day12
         return result.ToString();
     }
     
-    private static string Part2(IEnumerable<string> input)
-    {
-        var result = new StringBuilder();
-        foreach (var line in input)
-        {
-        }
-        return result.ToString();
-    }
-    
     [TestMethod]
     public void Day12_Part1_Example01()
     {
@@ -402,33 +393,6 @@ public class Day12
     {
         var result = Part1(Common.DayInput(nameof(Day12), "2025"));
         Assert.AreEqual("583", result);
-    }
-    
-    [TestMethod]
-    public void Day12_Part2_Example01()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day12_Part2_Example02()
-    {
-        var input = """
-            <TODO>
-            """;
-        var result = Part2(Common.GetLines(input));
-        Assert.AreEqual("", result);
-    }
-    
-    [TestMethod]
-    public void Day12_Part2()
-    {
-        var result = Part2(Common.DayInput(nameof(Day12), "2025"));
-        Assert.AreEqual("", result);
     }
     
 }
