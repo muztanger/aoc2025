@@ -258,9 +258,9 @@ public class Day10
             
             Console.WriteLine($"Found equal state at height {equalHeight}, {pressesFromEqual} presses from equal to target");
             
-            // Step 2: Find equal-to-equal patterns for building up from 0
-            Console.WriteLine("Finding equal-to-equal patterns...");
-            var patterns = FindEqualToEqualPatterns(wiringMatrix, maxPresses: 15);
+            // Step 2: Find equal-to-equal patterns for building up from 0 to equalHeight
+            Console.WriteLine($"Finding equal-to-equal patterns up to height {equalHeight}...");
+            var patterns = FindEqualToEqualPatterns(wiringMatrix, maxHeight: equalHeight, maxPresses: 15);
             Console.WriteLine($"Found {patterns.Count} patterns");
             
             if (patterns.Count == 0)
@@ -362,7 +362,7 @@ public class Day10
                             variance += diff * diff;
                         }
 
-                        pq.Enqueue((prevState, presses + 1), (int)Math.Round(presses + 1 + variance));
+                        pq.Enqueue((prevState, presses + 1), (int)Math.Round(presses + 1.0 + variance));
                     }
                 }
             }
@@ -372,7 +372,7 @@ public class Day10
         }
 
         private static List<(int presses, int heightChange, int[] buttonCounts)> FindEqualToEqualPatterns(
-            int[][] wiringMatrix, int maxPresses)
+            int[][] wiringMatrix, int maxHeight, int maxPresses)
         {
             int targetLen = wiringMatrix[0].Length;
             int numButtons = wiringMatrix.Length;
@@ -400,6 +400,7 @@ public class Day10
                         }
                     }
                     
+                    // Check if all equal
                     bool allEqual = true;
                     int firstLevel = levels[0];
                     for (int i = 1; i < targetLen; i++)
@@ -411,9 +412,16 @@ public class Day10
                         }
                     }
                     
-                    if (allEqual && firstLevel > 0)
+                    // Only add patterns that don't exceed our target equal height
+                    if (allEqual && firstLevel > 0 && firstLevel <= maxHeight)
                     {
                         patterns.Add((presses, firstLevel, buttonCounts));
+                    }
+                    
+                    // Don't explore beyond maxHeight - prune this branch
+                    if (allEqual && firstLevel > maxHeight)
+                    {
+                        continue; // Skip exploring from this state
                     }
                 }
                 
@@ -432,7 +440,27 @@ public class Day10
                     var hash = ComputeButtonHash(nextCounts);
                     if (visited.Add(hash))
                     {
-                        queue.Enqueue((nextCounts, presses + 1));
+                        // Quick check: don't explore if current joltages already exceed maxHeight
+                        var levels = new int[targetLen];
+                        bool exceedsMax = false;
+                        for (int w2 = 0; w2 < numButtons; w2++)
+                        {
+                            for (int i = 0; i < targetLen; i++)
+                            {
+                                levels[i] += nextCounts[w2] * wiringMatrix[w2][i];
+                                if (levels[i] > maxHeight)
+                                {
+                                    exceedsMax = true;
+                                    break;
+                                }
+                            }
+                            if (exceedsMax) break;
+                        }
+                        
+                        if (!exceedsMax)
+                        {
+                            queue.Enqueue((nextCounts, presses + 1));
+                        }
                     }
                 }
             }
@@ -726,7 +754,7 @@ public class Day10
     public void Day10_Part2_BackwardSearchDepth()
     {
         // Test if increasing backward search limits helps
-        var allLines = Common.DayInput(nameof(Day10), "2025")).ToList();
+        var allLines = Common.DayInput(nameof(Day10), "2025").ToList();
         
         // Line 0 failed with "No equal state found after exploring 1000001 states"
         Console.WriteLine("Testing line 0 with current limits:");
