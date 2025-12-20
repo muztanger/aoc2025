@@ -224,31 +224,13 @@ public class Day10
 
         internal int FewestPressesToJoltage()
         {
-            var target = _requirements.Values.ToArray();
-            
-            // Build wiring matrix
-            var wiringMatrix = new int[_wirings.Count][];
-            for (int w = 0; w < _wirings.Count; w++)
-            {
-                wiringMatrix[w] = new int[target.Length];
-                foreach (var idx in _wirings[w])
-                {
-                    wiringMatrix[w][idx]++;
-                }
-            }
-            
-            return SolveWithZ3(wiringMatrix, target);
-        }
-
-        private static int SolveWithZ3(int[][] wiringMatrix, int[] target)
-        {
             try
             {
                 using var ctx = new Context();
                 var solver = ctx.MkOptimize();
 
-                int numButtons = wiringMatrix.Length;
-                int numJoltages = target.Length;
+                int numButtons = _wirings.Count;
+                int numJoltages = _requirements.Values.Count;
 
                 // Create integer variables for button press counts
                 var buttonPresses = new IntExpr[numButtons];
@@ -264,13 +246,14 @@ public class Day10
                     ArithExpr joltageSum = ctx.MkInt(0);
                     for (int i = 0; i < numButtons; i++)
                     {
-                        if (wiringMatrix[i][j] > 0)
+                        int count = _wirings[i].Count(idx => idx == j);
+                        if (count > 0)
                         {
                             joltageSum = ctx.MkAdd(joltageSum,
-                                ctx.MkMul(buttonPresses[i], ctx.MkInt(wiringMatrix[i][j])));
+                                ctx.MkMul(buttonPresses[i], ctx.MkInt(count)));
                         }
                     }
-                    solver.Add(ctx.MkEq(joltageSum, ctx.MkInt(target[j])));
+                    solver.Add(ctx.MkEq(joltageSum, ctx.MkInt(_requirements.Values[j])));
                 }
 
                 // Minimize total button presses
