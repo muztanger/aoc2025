@@ -236,156 +236,58 @@ public class Day10
                 }
             }
             
-            return BFSWithPruning(wiringMatrix, target);
+            return SolveWithButtonCounts(wiringMatrix, target);
         }
 
-        private static int BFSWithPruning(int[][] wiringMatrix, int[] target)
+        private static int SolveWithButtonCounts(int[][] wiringMatrix, int[] target)
         {
-            int targetLen = target.Length;
-            
-            // Find minimum target value
-            int minTarget = int.MaxValue;
-            for (int i = 0; i < targetLen; i++)
-            {
-                if (target[i] < minTarget)
-                    minTarget = target[i];
-            }
-            
-            // Calculate differences from minimum
-            var targetDiffsFromMin = new int[targetLen];
-            for (int i = 0; i < targetLen; i++)
-            {
-                targetDiffsFromMin[i] = target[i] - minTarget;
-            }
-            
-            Console.WriteLine($"Min target value: {minTarget}");
-            Console.WriteLine($"Target differences from min: [{string.Join(", ", targetDiffsFromMin)}]");
-            
-            // Step 1: Find a state where differences from minimum match target
-            var (matchingState, pressesToMatching) = FindStateWithMatchingDifferencesFromMin(wiringMatrix, targetDiffsFromMin, target);
-            
-            if (matchingState == null)
-            {
-                Console.WriteLine("Cannot find state with matching differences from min, using direct search");
-                return DirectBFS(wiringMatrix, target);
-            }
-            
-            Console.WriteLine($"Found state with matching differences: [{string.Join(", ", matchingState)}] in {pressesToMatching} presses");
-            
-            // Step 2: Calculate offset needed
-            int minMatching = int.MaxValue;
-            for (int i = 0; i < targetLen; i++)
-            {
-                if (matchingState[i] < minMatching)
-                    minMatching = matchingState[i];
-            }
-            
-            int offset = minTarget - minMatching;
-            Console.WriteLine($"Min in matching state: {minMatching}, offset needed: {offset}");
-            
-            // Verify the structure is correct
-            bool validStructure = true;
-            for (int i = 0; i < targetLen; i++)
-            {
-                int expectedDiff = targetDiffsFromMin[i];
-                int actualDiff = matchingState[i] - minMatching;
-                if (actualDiff != expectedDiff)
-                {
-                    validStructure = false;
-                    Console.WriteLine($"Warning: Diff mismatch at index {i}: expected {expectedDiff}, got {actualDiff}");
-                }
-            }
-            
-            if (!validStructure)
-            {
-                Console.WriteLine("Structure doesn't match, searching from matching state to target");
-                int remaining = FindPathToState(wiringMatrix, matchingState, target);
-                if (remaining < 0)
-                {
-                    return DirectBFS(wiringMatrix, target);
-                }
-                return pressesToMatching + remaining;
-            }
-            
-            // Step 3: Add uniform offset to reach target
-            int pressesToAdd = AddUniformOffset(wiringMatrix, matchingState, offset, target);
-            
-            if (pressesToAdd < 0)
-            {
-                Console.WriteLine("Cannot add uniform offset, searching from matching state");
-                int remaining = FindPathToState(wiringMatrix, matchingState, target);
-                if (remaining < 0)
-                {
-                    return DirectBFS(wiringMatrix, target);
-                }
-                return pressesToMatching + remaining;
-            }
-            
-            Console.WriteLine($"Added offset in {pressesToAdd} presses");
-            
-            return pressesToMatching + pressesToAdd;
-        }
-
-        private static (int[] state, int presses) FindStateWithMatchingDifferencesFromMin(int[][] wiringMatrix, int[] targetDiffsFromMin, int[] target)
-        {
-            int targetLen = target.Length;
             int numButtons = wiringMatrix.Length;
+            int targetLen = target.Length;
             
+            // State = how many times each button has been pressed
+            var pq = new PriorityQueue<(int[] buttonCounts, int totalPresses), int>();
             var visited = new HashSet<long>();
-            var queue = new Queue<(int[] state, int depth)>();
             
-            var start = new int[targetLen];
-            var startHash = ComputeHashFast(start);
+            var start = new int[numButtons];
+            var startHash = ComputeButtonHash(start);
+            
+            pq.Enqueue((start, 0), 0);
             visited.Add(startHash);
-            queue.Enqueue((start, 0));
             
-            const int maxDepth = 300;
-            const int maxStates = 2000000;
-            
-            while (queue.Count > 0)
+            while (pq.Count > 0 && visited.Count < 10000000)
             {
-                var (state, depth) = queue.Dequeue();
+                var (buttonCounts, totalPresses) = pq.Dequeue();
                 
-                // Find minimum in current state
-                int minState = int.MaxValue;
-                for (int i = 0; i < targetLen; i++)
+                // Calculate current joltage levels from button counts
+                var currentLevels = new int[targetLen];
+                for (int w = 0; w < numButtons; w++)
                 {
-                    if (state[i] < minState)
-                        minState = state[i];
+                    for (int i = 0; i < targetLen; i++)
+                    {
+                        currentLevels[i] += buttonCounts[w] * wiringMatrix[w][i];
+                    }
                 }
                 
-                // Check if differences from minimum match target
-                bool diffsMatch = true;
+                // Check if we reached the target
+                bool isTarget = true;
                 for (int i = 0; i < targetLen; i++)
                 {
-                    int stateDiff = state[i] - minState;
-                    if (stateDiff != targetDiffsFromMin[i])
+                    if (currentLevels[i] != target[i])
                     {
-                        diffsMatch = false;
+                        isTarget = false;
                         break;
                     }
                 }
+                if (isTarget) return totalPresses;
                 
-                if (diffsMatch)
-                {
-                    // Found a state with matching structure!
-                    return (state, depth);
-                }
-
-                if (depth >= maxDepth)
-                {
-                    continue;
-                }
-                
-                // Try each button
+                // Try pressing each button one more time
                 for (int w = 0; w < numButtons; w++)
                 {
+                    // Check if pressing this button would exceed any target
                     bool valid = true;
-                    
-                    // Don't exceed target values
                     for (int i = 0; i < targetLen; i++)
                     {
-                        if (state[i] + wiringMatrix[w][i] > target[i])
+                        if (currentLevels[i] + wiringMatrix[w][i] > target[i])
                         {
                             valid = false;
                             break;
@@ -394,234 +296,41 @@ public class Day10
                     
                     if (!valid) continue;
                     
-                    var next = new int[targetLen];
-                    for (int i = 0; i < targetLen; i++)
+                    // Create new button count state
+                    var nextCounts = new int[numButtons];
+                    for (int b = 0; b < numButtons; b++)
                     {
-                        next[i] = state[i] + wiringMatrix[w][i];
+                        nextCounts[b] = buttonCounts[b];
                     }
+                    nextCounts[w]++; // FIX: Actually increment the button being pressed!
                     
-                    var nextHash = ComputeHashFast(next);
+                    var nextHash = ComputeButtonHash(nextCounts);
                     
                     if (visited.Add(nextHash))
                     {
-                        queue.Enqueue((next, depth + 1));
-                    }
-                }
-                
-                // Memory limit
-                if (visited.Count > maxStates)
-                {
-                    Console.WriteLine($"Memory limit in FindStateWithMatchingDifferencesFromMin. Visited: {visited.Count}");
-                    return (null, -1);
-                }
-            }
-            
-            return (null, -1);
-        }
-
-        private static int AddUniformOffset(int[][] wiringMatrix, int[] start, int offset, int[] target)
-        {
-            if (offset == 0)
-                return 0;
-            
-            if (offset < 0)
-                return -1; // Cannot subtract
-            
-            int targetLen = start.Length;
-            int numButtons = wiringMatrix.Length;
-            
-            // Find button that increments all counters by 1
-            int uniformButton = -1;
-            for (int w = 0; w < numButtons; w++)
-            {
-                bool isUniform = true;
-                for (int i = 0; i < targetLen; i++)
-                {
-                    if (wiringMatrix[w][i] != 1)
-                    {
-                        isUniform = false;
-                        break;
-                    }
-                }
-                if (isUniform)
-                {
-                    uniformButton = w;
-                    break;
-                }
-            }
-            
-            if (uniformButton >= 0)
-            {
-                Console.WriteLine($"Found uniform button {uniformButton}, pressing {offset} times");
-                return offset;
-            }
-            
-            Console.WriteLine("No uniform button found, need to search for offset");
-            
-            // Search for a way to add offset
-            var current = new int[targetLen];
-            for (int i = 0; i < targetLen; i++)
-            {
-                current[i] = start[i];
-            }
-            
-            return FindPathToState(wiringMatrix, current, target);
-        }
-
-        private static int FindPathToState(int[][] wiringMatrix, int[] start, int[] target)
-        {
-            int targetLen = target.Length;
-            int numButtons = wiringMatrix.Length;
-            
-            var visited = new HashSet<long>();
-            var queue = new Queue<(int[] state, int depth)>();
-            
-            var startHash = ComputeHashFast(start);
-            visited.Add(startHash);
-            queue.Enqueue((start, 0));
-            
-            var targetHash = ComputeHashFast(target);
-            
-            const int maxDepth = 200;
-            const int maxStates = 1000000;
-            
-            while (queue.Count > 0)
-            {
-                var (state, depth) = queue.Dequeue();
-                
-                var hash = ComputeHashFast(state);
-                if (hash == targetHash)
-                {
-                    return depth;
-                }
-
-                if (depth >= maxDepth)
-                {
-                    continue;
-                }
-                
-                // Try each button
-                for (int w = 0; w < numButtons; w++)
-                {
-                    bool valid = true;
-                    
-                    for (int i = 0; i < targetLen; i++)
-                    {
-                        if (state[i] + wiringMatrix[w][i] > target[i])
+                        // Calculate heuristic
+                        int h = 0;
+                        for (int i = 0; i < targetLen; i++)
                         {
-                            valid = false;
-                            break;
+                            int newLevel = currentLevels[i] + wiringMatrix[w][i];
+                            h += target[i] - newLevel;
                         }
+                        
+                        pq.Enqueue((nextCounts, totalPresses + 1), totalPresses + 1 + (h / 10));
                     }
-                    
-                    if (!valid) continue;
-                    
-                    var next = new int[targetLen];
-                    for (int i = 0; i < targetLen; i++)
-                    {
-                        next[i] = state[i] + wiringMatrix[w][i];
-                    }
-                    
-                    var nextHash = ComputeHashFast(next);
-                    
-                    if (visited.Add(nextHash))
-                    {
-                        queue.Enqueue((next, depth + 1));
-                    }
-                }
-                
-                // Memory limit
-                if (visited.Count > maxStates)
-                {
-                    Console.WriteLine($"Memory limit in FindPathToState. Visited: {visited.Count}");
-                    return -1;
                 }
             }
             
+            Console.WriteLine($"Failed after exploring {visited.Count} button combination states");
             return -1;
         }
 
-        private static int DirectBFS(int[][] wiringMatrix, int[] target)
-        {
-            int targetLen = target.Length;
-            int numButtons = wiringMatrix.Length;
-            
-            var visited = new Dictionary<long, int>();
-            var queue = new Queue<(int[] state, int depth)>();
-            
-            var start = new int[targetLen];
-            var startHash = ComputeHashFast(start);
-            visited[startHash] = 0;
-            queue.Enqueue((start, 0));
-            
-            var targetHash = ComputeHashFast(target);
-
-            const int maxDepth = 400;
-
-            while (queue.Count > 0)
-            {
-                var (state, depth) = queue.Dequeue();
-                
-                var hash = ComputeHashFast(state);
-                if (hash == targetHash)
-                {
-                    return depth;
-                }
-
-                if (depth >= maxDepth)
-                {
-                    continue;
-                }
-                
-                // Try each button
-                for (int w = 0; w < numButtons; w++)
-                {
-                    bool valid = true;
-                    
-                    for (int i = 0; i < targetLen; i++)
-                    {
-                        if (state[i] + wiringMatrix[w][i] > target[i])
-                        {
-                            valid = false;
-                            break;
-                        }
-                    }
-                    
-                    if (!valid) continue;
-                    
-                    var next = new int[targetLen];
-                    for (int i = 0; i < targetLen; i++)
-                    {
-                        next[i] = state[i] + wiringMatrix[w][i];
-                    }
-                    
-                    var nextHash = ComputeHashFast(next);
-                    int newDepth = depth + 1;
-                    
-                    if (!visited.TryGetValue(nextHash, out var existing) || newDepth < existing)
-                    {
-                        visited[nextHash] = newDepth;
-                        queue.Enqueue((next, newDepth));
-                    }
-                }
-                
-                // Memory limit
-                if (visited.Count > 10_000_000)
-                {
-                    Console.WriteLine("Memory limit in DirectBFS. Visited: " + visited.Count);
-                    break;
-                }
-            }
-            
-            return -1;
-        }
-
-        private static long ComputeHashFast(int[] levels)
+        private static long ComputeButtonHash(int[] buttonCounts)
         {
             long hash = 17;
-            for (int i = 0; i < levels.Length; i++)
+            for (int i = 0; i < buttonCounts.Length; i++)
             {
-                hash = hash * 31 + levels[i];
+                hash = hash * 31 + buttonCounts[i];
             }
             return hash;
         }
